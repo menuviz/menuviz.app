@@ -1,0 +1,9 @@
+# Keep in sync with treefmt.toml excludes.
+bun.lock
+.env*
+next-env.d.ts
+.next/
+out/
+node_modules/
+*.svg
+*.ico
