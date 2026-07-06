@@ -23,4 +23,6 @@ pre-push:
     type-check:
       run: bun run type-check
     build:
-      run: bun run build
+      # </dev/null: next build probes stdin for a TTY and crashes with
+      # `setRawMode EBADF` on the closed descriptor git hooks run under.
+      run: bun run build </dev/null
