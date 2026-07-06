@@ -26,6 +26,12 @@ in `~/menuviz-org/` (dir names predate the rename).
 | `qr.menuviz.app`    | `beacon-qr/`     | qr.menuviz.app                   | Worker `beacon-qr`     | Beacon — dynamic QR redirects + scan analytics                                      |
 | `.github`           | `.github/`       | github.com/menuviz               | —                      | Org profile README                                                                  |
 
+The `_.menuviz.app` repo also ships two extra workers: **menuviz-cdn**
+(`workers/cdn/`, cdn.menuviz.app — serves the assets bucket with per-brand
+hotlink rules; empty Referer always allowed for AR viewers) and **menuviz-og**
+(`workers/og/` — renders each brand's static OpenGraph card to R2 at
+`<brand>/brand/og.png` when branding changes).
+
 ### Shared infrastructure
 
 - **Cloudflare**: account `09abb782bf38f116f993da799ee6e023`, zone menuviz.app
@@ -45,6 +51,13 @@ in `~/menuviz-org/` (dir names predate the rename).
   shells are the source of truth (`nix develop`, machine has no global node);
   lefthook gates commits/pushes; CI deploys `main`, PRs get preview deploys.
 
+- **Workers FREE plan** (confirmed 2026-07-06): limits don't bill, they
+  BREAK — 100k requests/day account-wide (the CDN worker is the volume
+  driver), ~10ms CPU/request (the "1102" failure class: never render images
+  or batch heavy work per-request), KV 100k reads + 1k writes/day, Workers
+  Logs 200k events/day. Workers Paid ($5/mo) lifts all of these and is the
+  first upgrade when traffic grows.
+
 ## Where to start (this repo)
 
 ```bash
@@ -55,8 +68,14 @@ bun run dev        # http://localhost:3000
 
 Gates: `bun run lint`, `bun run type-check`, `bun run build` (static export).
 CI (`.github/workflows/ci.yml`) deploys `out/` to Cloudflare Pages on `main`;
-PRs get preview URLs commented.
+PRs get preview URLs commented. **The Pages project name is PINNED to
+`menuviz-web` via `env.PAGES_PROJECT`** — it used to be derived from the repo
+name, which broke the day the repo was renamed to `menuviz.app` (dots are not
+valid in Pages project names). Don't "simplify" it back.
 
 Key files: `app/page.tsx` (the page), `app/opengraph-image.tsx` (build-time OG
 card — keep `dynamic = "force-static"`, required for static export),
-`DESIGN.md` / `PRODUCT.md` (visual + product context).
+`app/icon.svg` (**the canonical MenuViz mark** — QR brackets + Emerald Signal
+`#2f9e6e`; the other three apps carry copies of this exact file, so favicon
+changes start here and get re-copied), `DESIGN.md` / `PRODUCT.md` (visual +
+product context — the OG cards and brand surfaces reuse this palette).
