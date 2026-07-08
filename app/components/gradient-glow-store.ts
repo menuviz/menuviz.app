@@ -186,31 +186,79 @@ export const FINAL_CTA_GLOW_SEED: GradientGlowConfig = {
   },
 };
 
-// Locked in from the dev panel: the noisy diagonal texture behind the
-// Bento grid. Colors stay pinned to Final CTA's palette (see
+// Previous Bento lock: the noisy diagonal texture. Kept for reference —
+// swap back in by uncommenting and pointing BENTO_GLOW_SEED at it.
+// export const BENTO_GLOW_SEED_NOISE_DIAGONAL: GradientGlowConfig = {
+//   layer: {
+//     peakCount: "noise",
+//     peakPos: 0.6041765124584839,
+//     waveFreq: 6,
+//     curveExp: 2.1099345400390654,
+//     widthExp: 1.1865652085393001,
+//     mirror: true,
+//     direction: "down-left",
+//     count: 19,
+//     depth: 0.033851671573628755,
+//     maxH: 0.8312810618065632,
+//     gap: 0.05356009878945025,
+//     capRound: 0.1373531897246726,
+//     pointness: 0.136370257575525,
+//     jitter: 0.22773476587516703,
+//     noiseSeed: 42,
+//     steps: 0,
+//     gradMap: "bar",
+//     hueDrift: 0,
+//     hueRotate: -6,
+//     opacity: 1,
+//     stops: [
+//       { pos: 0, color: VOID_BG },
+//       { pos: 0.4, color: "#1e7a52" },
+//       { pos: 0.72, color: "#2f9e6e" },
+//       { pos: 0.9, color: "#3cb87e" },
+//       { pos: 1, color: "#aed2a4" },
+//     ],
+//   },
+//   state: {
+//     bgColor: VOID_BG,
+//     margin: 0,
+//     grainIntensity: 0.18,
+//     shadowStrength: 0.69,
+//     edgeStrength: 0.44,
+//     sideLineStrength: 0.16,
+//   },
+//   anim: {
+//     hueDriftDeg: 0,
+//     hueDriftPeriodS: 73,
+//     frameIntervalMs: 16,
+//     paused: false,
+//   },
+// };
+
+// Locked in from the dev panel: the low-opacity "across" ribbon texture
+// behind the Bento grid. Colors stay pinned to Final CTA's palette (see
 // bentoGradientStore's colorLock).
 export const BENTO_GLOW_SEED: GradientGlowConfig = {
   layer: {
-    peakCount: "noise",
-    peakPos: 0.6041765124584839,
-    waveFreq: 6,
-    curveExp: 2.1099345400390654,
-    widthExp: 1.1865652085393001,
+    peakCount: "two",
+    peakPos: 0.2567262019807701,
+    waveFreq: 1,
+    curveExp: 1.3413253431945398,
+    widthExp: 0.75975208804849,
     mirror: true,
-    direction: "down-left",
-    count: 19,
-    depth: 0.033851671573628755,
-    maxH: 0.8312810618065632,
-    gap: 0.05356009878945025,
-    capRound: 0.1373531897246726,
-    pointness: 0.136370257575525,
-    jitter: 0.22773476587516703,
+    direction: "right",
+    count: 14,
+    depth: 0.02099075128864994,
+    maxH: 0.9300154845107064,
+    gap: 0.10331532436025893,
+    capRound: 0.07893782249037729,
+    pointness: 0.07012807972525452,
+    jitter: 0.09089162429821761,
     noiseSeed: 42,
     steps: 0,
-    gradMap: "bar",
+    gradMap: "across",
     hueDrift: 0,
     hueRotate: -6,
-    opacity: 1,
+    opacity: 0.5,
     stops: [
       { pos: 0, color: VOID_BG },
       { pos: 0.4, color: "#1e7a52" },
