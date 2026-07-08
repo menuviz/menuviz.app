@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { PhoneMockup } from "./components/phone-mockup";
 import BlurText from "./components/blur-text";
 import CyclingWord from "./components/cycling-word";
@@ -205,19 +206,28 @@ function Hero() {
   );
 }
 
+const restaurantLogos = [
+  { src: "/logos/rgb.png", alt: "RGB Burger", width: 197, height: 260 },
+  { src: "/logos/substation.png", alt: "Substation", width: 149, height: 260 },
+  { src: "/logos/klap.png", alt: "Klap", width: 1278, height: 260 },
+  { src: "/logos/toss.png", alt: "Toss Pakistan", width: 200, height: 260 },
+  { src: "/logos/wraplab.png", alt: "WrapLab", width: 225, height: 260 },
+];
+
 function RestaurantStrip() {
   return (
-    <div className="mx-auto flex max-w-5xl flex-wrap items-baseline justify-center gap-x-12 gap-y-4 px-6 pb-24 pt-4 text-fern-deep">
-      <span className="text-[13px] font-semibold uppercase tracking-[0.22em]">Casa Limón</span>
-      <span className="font-display text-[17px] font-medium">The Brass Fig</span>
-      <span className="text-[16px] font-bold tracking-tight">noodle&amp;co</span>
-      <span className="text-[16px] italic" style={{ fontFamily: "Georgia, serif" }}>
-        Petit Four
-      </span>
-      <span className="text-[13px] font-medium uppercase tracking-[0.14em]">
-        Harbor Oyster Bar
-      </span>
-      <span className="font-display text-[16px]">Sichuan House</span>
+    <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-8 gap-y-4 px-6 pb-24 pt-4">
+      {restaurantLogos.map((logo) => (
+        <span key={logo.src} className="flex h-14 w-32 items-center justify-center sm:h-16 sm:w-36">
+          <Image
+            src={logo.src}
+            alt={logo.alt}
+            width={logo.width}
+            height={logo.height}
+            className="h-full w-full object-contain grayscale opacity-80 transition-all duration-300 ease-out-quart hover:opacity-100 hover:grayscale-0"
+          />
+        </span>
+      ))}
     </div>
   );
 }
