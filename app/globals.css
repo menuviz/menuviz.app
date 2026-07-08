@@ -205,17 +205,3 @@ p {
   }
 }
 
-/* FAQ accordion */
-.faq-item summary {
-  cursor: pointer;
-  list-style: none;
-}
-.faq-item summary::-webkit-details-marker {
-  display: none;
-}
-.faq-item summary .faq-icon {
-  transition: transform 300ms var(--ease-out-quart);
-}
-.faq-item[open] summary .faq-icon {
-  transform: rotate(45deg);
-}

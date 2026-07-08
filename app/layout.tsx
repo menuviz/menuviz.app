@@ -3,23 +3,23 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://menuviz.app"),
-  title: "MenuViz: your menu, in pictures",
+  title: "MenuViz: your menu, in 3D",
   description:
-    "A QR code on the table opens your menu as photographs. Every dish pictured, priced, and up to date. No app, no reprints.",
+    "A QR code on the table opens your menu in 3D. Every dish modeled, priced, and up to date. No app, no reprints.",
   alternates: { canonical: "https://menuviz.app" },
   openGraph: {
-    title: "MenuViz: your menu, in pictures",
+    title: "MenuViz: your menu, in 3D",
     description:
-      "A QR code on the table opens your menu as photographs. Every dish pictured, priced, and up to date. No app, no reprints.",
+      "A QR code on the table opens your menu in 3D. Every dish modeled, priced, and up to date. No app, no reprints.",
     url: "https://menuviz.app",
     siteName: "MenuViz",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "MenuViz: your menu, in pictures",
+    title: "MenuViz: your menu, in 3D",
     description:
-      "A QR code on the table opens your menu as photographs. Every dish pictured, priced, and up to date. No app, no reprints.",
+      "A QR code on the table opens your menu in 3D. Every dish modeled, priced, and up to date. No app, no reprints.",
   },
 };
 

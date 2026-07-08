@@ -139,7 +139,7 @@ function createGradientGlowStore(seed: GradientGlowConfig, colorLock?: ColorLock
 const VOID_BG = "#030503";
 
 // Locked in from the dev panel: the corner-glow look behind the "Put your
-// menu in pictures." CTA.
+// menu in 3D." CTA.
 export const FINAL_CTA_GLOW_SEED: GradientGlowConfig = {
   layer: {
     peakCount: "two",

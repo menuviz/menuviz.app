@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { FaqItem } from "./components/faq-item";
 import { PhoneMockup } from "./components/phone-mockup";
 import BlurText from "./components/blur-text";
 import CyclingWord from "./components/cycling-word";
@@ -166,8 +167,8 @@ function Hero() {
           className="rise mx-auto mt-6 max-w-[36rem] text-pretty text-[17px] leading-relaxed text-moss-bright sm:text-[19px]"
           style={{ "--i": 1 } as React.CSSProperties}
         >
-          A QR code on the table opens your menu as photographs: every dish
-          pictured, priced, and up to date. No app, no reprints.
+          A QR code on the table opens your menu in 3D: every dish modeled,
+          priced, and up to date. No app, no reprints.
         </p>
         <div
           className="rise mt-9 flex flex-wrap items-center justify-center gap-3"
@@ -235,7 +236,7 @@ function RestaurantStrip() {
 const steps = [
   {
     title: "Upload your menu",
-    body: "Add dishes, prices, and photos in a simple editor. Bring your own shots or book a shoot with us.",
+    body: "Add dishes, prices, and photos in a simple editor. We turn each photo into a 3D model — no scanning or special gear needed.",
     demo: <EditorDemo />,
   },
   {
@@ -244,8 +245,8 @@ const steps = [
     demo: <StampDemo />,
   },
   {
-    title: "Diners see the food",
-    body: "The code opens your menu as photographs. No app, no account, no waiting for a server to explain.",
+    title: "Diners explore the food",
+    body: "The code opens your menu in 3D. No app, no account, no waiting for a server to explain.",
     demo: <MiniPhoneDemo />,
   },
 ];
@@ -255,7 +256,7 @@ function HowItWorks() {
     <section id="how-it-works" className="scroll-mt-24 border-t border-hairline">
       <div className="mx-auto max-w-6xl px-6 py-24 sm:py-28">
         <h2 className="font-display text-[clamp(1.9rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.02em] text-phosphor">
-          How it works
+          <BlurText text="How it works" />
         </h2>
         <div className="mt-14 grid gap-12 md:grid-cols-3 md:gap-0 md:divide-x md:divide-hairline">
           {steps.map((step) => (
@@ -298,8 +299,8 @@ const cards: Card[] = [
     demo: <InstantLoadDemo />,
   },
   {
-    statement: "Photos do the selling.",
-    support: "Diners order more when they can see the plate.",
+    statement: "The dish, in 3D.",
+    support: "Diners order more when they can turn the plate and see every angle.",
     tone: "dark",
     demo: <TextToPhotoDemo />,
   },
@@ -389,11 +390,11 @@ function Bento() {
 const faqs = [
   {
     q: "How long does setup take?",
-    a: "Most menus are live within a week. The editor takes minutes; photography is the long pole, and you can launch with the photos you already have.",
+    a: "Most menus are live within a week. The editor takes minutes; turning your dishes into 3D is the long pole, and you can launch faster with photos you already have.",
   },
   {
     q: "Who takes the photos?",
-    a: "Either you do, or we do. Upload your own shots, or book one of our photographers for a half-day shoot of your best sellers.",
+    a: "Either you do, or we do. Upload your own, or book one of our photographers for a half-day shoot of your best sellers. We handle turning them into 3D from there — no scanning or special equipment on your end.",
   },
   {
     q: "Do diners need to download anything?",
@@ -414,26 +415,11 @@ function Faq() {
     <section id="faq" className="scroll-mt-24 border-t border-hairline">
       <div className="mx-auto max-w-3xl px-6 py-24 sm:py-28">
         <h2 className="font-display text-[clamp(1.9rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.02em] text-phosphor">
-          Common questions
+          <BlurText text="Common questions" />
         </h2>
         <div className="mt-10">
           {faqs.map((item) => (
-            <details key={item.q} className="faq-item group border-b border-hairline">
-              <summary className="flex items-center justify-between gap-6 py-5 text-[16px] font-medium text-mint transition-colors duration-300 hover:text-phosphor sm:text-[17px]">
-                {item.q}
-                <svg
-                  className="faq-icon h-4 w-4 shrink-0 text-fern"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  aria-hidden="true"
-                >
-                  <path d="M8 2v12M2 8h12" />
-                </svg>
-              </summary>
-              <p className="max-w-[60ch] pb-6 text-[15px] leading-relaxed text-sage">{item.a}</p>
-            </details>
+            <FaqItem key={item.q} q={item.q} a={item.a} />
           ))}
         </div>
       </div>
@@ -447,11 +433,11 @@ function FinalCta() {
       <GradientGlow store={finalCtaGradientStore} />
       <div className="relative mx-auto max-w-3xl px-6 py-28 text-center sm:py-36">
         <h2
-          aria-label="Put your menu in pictures."
+          aria-label="Put your menu in 3D."
           className="font-display text-[clamp(2.1rem,5vw,3.4rem)] font-medium leading-[1.05] tracking-[-0.025em] text-phosphor"
         >
           <span aria-hidden="true">
-            <TrueFocus sentence="Put your menu in pictures." />
+            <TrueFocus sentence="Put your menu in 3D." />
           </span>
         </h2>
         <a

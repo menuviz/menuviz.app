@@ -65,7 +65,7 @@ function Tick({ className = "" }: { className?: string }) {
 /** Rolls the last digit of a price between 5 and 6 ($15 -> $16). */
 function RollDigit({ up }: { up: boolean }) {
   return (
-    <span className="inline-block h-[1.2em] overflow-hidden align-bottom">
+    <span className="inline-block h-[1.2em] overflow-hidden align-text-bottom">
       <span
         className={`flex flex-col transition-transform duration-300 ease-out-quart ${
           up ? "-translate-y-1/2" : ""

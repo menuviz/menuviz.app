@@ -4,7 +4,7 @@ import { ImageResponse } from "next/og";
 // landing page. Mirrors the site's phosphor-dark system: near-black canvas,
 // sage type, one emerald signal.
 export const dynamic = "force-static";
-export const alt = "MenuViz — your menu, in pictures";
+export const alt = "MenuViz — your menu, in 3D";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -50,11 +50,11 @@ export default function OpenGraphImage() {
             maxWidth: 940,
           }}
         >
-          Your menu, in pictures.
+          Your menu, in 3D.
         </div>
         <div style={{ fontSize: 32, color: sage, maxWidth: 900 }}>
-          A QR code on the table opens your menu as photographs — every dish
-          pictured, priced, and up to date. No app, no reprints.
+          A QR code on the table opens your menu in 3D — every dish modeled,
+          priced, and up to date. No app, no reprints.
         </div>
       </div>
 
