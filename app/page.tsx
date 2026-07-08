@@ -1,5 +1,6 @@
 import { PhoneMockup } from "./components/phone-mockup";
 import BlurText from "./components/blur-text";
+import CyclingWord from "./components/cycling-word";
 import TrueFocus from "./components/true-focus";
 import { GradientGlow } from "./components/gradient-glow";
 import { GradientGlowDevPanel } from "./components/gradient-glow-dev-panel";
@@ -120,6 +121,8 @@ const particles = [
   { top: "72%", left: "28%", size: 2, opacity: 0.3 },
 ];
 
+const FOOD_WORDS = ["food.", "pizza.", "biryani.", "sushi."];
+
 function Hero() {
   return (
     <section className="relative overflow-hidden px-6 pt-40 sm:pt-48">
@@ -147,7 +150,10 @@ function Hero() {
           className="font-display text-[clamp(2.7rem,7vw,4.5rem)] font-medium leading-[1.02] tracking-[-0.03em]"
         >
           <span aria-hidden="true">
-            <BlurText text="Show the food." className="justify-center text-emerald" />
+            <span className="flex flex-wrap items-baseline justify-center text-emerald">
+              <BlurText text="Show the" className="mr-[0.3em]" />
+              <CyclingWord words={FOOD_WORDS} initialDelay={240} />
+            </span>
             <BlurText
               text="Sell more of it."
               initialDelay={380}
