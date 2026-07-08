@@ -194,13 +194,27 @@ p {
   animation: demo-scroll 16s linear infinite;
 }
 
+/* Logo strip marquee (phone only): drifts left to right, very slowly. */
+@keyframes marquee {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0%);
+  }
+}
+.marquee {
+  animation: marquee 40s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .demo-typing,
   .demo-fill,
   .demo-pop,
   .demo-swap,
   .demo-pulse,
-  .demo-scroll {
+  .demo-scroll,
+  .marquee {
     animation: none !important;
   }
 }

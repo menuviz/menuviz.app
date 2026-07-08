@@ -215,20 +215,39 @@ const restaurantLogos = [
   { src: "/logos/wraplab.png", alt: "WrapLab", width: 225, height: 260 },
 ];
 
+function LogoImage({ logo }: { logo: (typeof restaurantLogos)[number] }) {
+  return (
+    <Image
+      src={logo.src}
+      alt={logo.alt}
+      width={logo.width}
+      height={logo.height}
+      className="h-full w-full object-contain grayscale opacity-80 transition-all duration-300 ease-out-quart hover:opacity-100 hover:grayscale-0"
+    />
+  );
+}
+
 function RestaurantStrip() {
   return (
-    <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-8 gap-y-4 px-6 pb-24 pt-4">
-      {restaurantLogos.map((logo) => (
-        <span key={logo.src} className="flex h-14 w-32 items-center justify-center sm:h-16 sm:w-36">
-          <Image
-            src={logo.src}
-            alt={logo.alt}
-            width={logo.width}
-            height={logo.height}
-            className="h-full w-full object-contain grayscale opacity-80 transition-all duration-300 ease-out-quart hover:opacity-100 hover:grayscale-0"
-          />
-        </span>
-      ))}
+    <div className="pb-24 pt-4">
+      {/* Phone: auto-scrolling marquee, edges faded out */}
+      <div className="overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)] sm:hidden">
+        <div className="marquee flex w-max items-center gap-10">
+          {[...restaurantLogos, ...restaurantLogos].map((logo, i) => (
+            <span key={i} className="flex h-14 w-32 shrink-0 items-center justify-center">
+              <LogoImage logo={logo} />
+            </span>
+          ))}
+        </div>
+      </div>
+      {/* Tablet and up: static centered row */}
+      <div className="mx-auto hidden max-w-5xl flex-wrap items-center justify-center gap-x-8 gap-y-4 px-6 sm:flex">
+        {restaurantLogos.map((logo) => (
+          <span key={logo.src} className="flex h-14 w-32 items-center justify-center sm:h-16 sm:w-36">
+            <LogoImage logo={logo} />
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -258,9 +277,12 @@ function HowItWorks() {
         <h2 className="font-display text-[clamp(1.9rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.02em] text-phosphor">
           <BlurText text="How it works" />
         </h2>
-        <div className="mt-14 grid gap-12 md:grid-cols-3 md:gap-0 md:divide-x md:divide-hairline">
+        <div className="mt-14 -mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:snap-none md:grid-cols-3 md:gap-0 md:divide-x md:divide-hairline md:overflow-visible md:px-0 md:pb-0">
           {steps.map((step) => (
-            <div key={step.title} className="md:px-10 md:first:pl-0 md:last:pr-0">
+            <div
+              key={step.title}
+              className="w-[85%] shrink-0 snap-center rounded-lg border border-hairline bg-ground p-6 sm:w-[55%] md:w-auto md:shrink md:rounded-none md:border-0 md:bg-transparent md:p-0 md:px-10 md:first:pl-0 md:last:pr-0"
+            >
               {step.demo}
               <h3 className="mt-6 font-display text-[22px] font-medium tracking-[-0.013em] text-mint">
                 {step.title}
