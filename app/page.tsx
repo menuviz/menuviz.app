@@ -1,6 +1,14 @@
 import { PhoneMockup } from "./components/phone-mockup";
 import BlurText from "./components/blur-text";
+import CyclingWord from "./components/cycling-word";
 import TrueFocus from "./components/true-focus";
+import { GradientGlow } from "./components/gradient-glow";
+import { GradientGlowDevPanel } from "./components/gradient-glow-dev-panel";
+import {
+  finalCtaGradientStore,
+  bentoGradientStore,
+  heroGradientStore,
+} from "./components/gradient-glow-store";
 import {
   EditorDemo,
   StampDemo,
@@ -113,9 +121,12 @@ const particles = [
   { top: "72%", left: "28%", size: 2, opacity: 0.3 },
 ];
 
+const FOOD_WORDS = ["food.", "pizza.", "biryani.", "sushi."];
+
 function Hero() {
   return (
     <section className="relative overflow-hidden px-6 pt-40 sm:pt-48">
+      <GradientGlow store={heroGradientStore} />
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
         {particles.map((p, i) => (
           <span
@@ -139,7 +150,10 @@ function Hero() {
           className="font-display text-[clamp(2.7rem,7vw,4.5rem)] font-medium leading-[1.02] tracking-[-0.03em]"
         >
           <span aria-hidden="true">
-            <BlurText text="Show the food." className="justify-center text-emerald" />
+            <span className="flex flex-wrap items-baseline justify-center text-emerald">
+              <BlurText text="Show the" className="mr-[0.3em]" />
+              <CyclingWord words={FOOD_WORDS} initialDelay={240} />
+            </span>
             <BlurText
               text="Sell more of it."
               initialDelay={380}
@@ -295,8 +309,9 @@ const cards: Card[] = [
 
 function Bento() {
   return (
-    <section className="mx-auto max-w-6xl px-6 pb-24 sm:pb-32">
-      <div className="grid gap-5 md:grid-cols-3">
+    <section className="relative overflow-hidden">
+      <GradientGlow store={bentoGradientStore} />
+      <div className="relative mx-auto grid max-w-6xl gap-5 px-6 pb-24 sm:pb-32 md:grid-cols-3">
         {cards.map((card) => {
           const dark = card.tone === "dark";
           const statement = (
@@ -418,8 +433,9 @@ function Faq() {
 
 function FinalCta() {
   return (
-    <section className="border-t border-hairline">
-      <div className="mx-auto max-w-3xl px-6 py-28 text-center sm:py-36">
+    <section className="relative overflow-hidden">
+      <GradientGlow store={finalCtaGradientStore} />
+      <div className="relative mx-auto max-w-3xl px-6 py-28 text-center sm:py-36">
         <h2
           aria-label="Put your menu in pictures."
           className="font-display text-[clamp(2.1rem,5vw,3.4rem)] font-medium leading-[1.05] tracking-[-0.025em] text-phosphor"
@@ -428,9 +444,6 @@ function FinalCta() {
             <TrueFocus sentence="Put your menu in pictures." />
           </span>
         </h2>
-        <p className="mx-auto mt-5 max-w-[34rem] text-[16px] leading-relaxed text-sage sm:text-[17px]">
-          A fifteen minute walkthrough, with your own menu on the screen.
-        </p>
         <a
           href={DEMO_URL}
           target="_blank"
@@ -478,6 +491,13 @@ export default function Home() {
         <FinalCta />
       </main>
       <Footer />
+      {process.env.NODE_ENV === "development" && (
+        <div className="fixed bottom-4 right-4 z-[60] flex flex-col items-end gap-2">
+          <GradientGlowDevPanel store={heroGradientStore} label="Hero" showRandomize />
+          <GradientGlowDevPanel store={bentoGradientStore} label="Bento" showRandomize />
+          <GradientGlowDevPanel store={finalCtaGradientStore} label="Final CTA" />
+        </div>
+      )}
     </>
   );
 }
