@@ -12,7 +12,7 @@ import { useReducedMotion } from "motion/react";
 import { QrCode } from "./qr-code";
 import { dishes } from "./menu-data";
 
-function useDemoLoop(durations: readonly number[]) {
+export function useDemoLoop(durations: readonly number[]) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [phase, setPhase] = useState(0);
   const [cycle, setCycle] = useState(0);
