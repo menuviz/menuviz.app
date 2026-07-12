@@ -149,7 +149,7 @@ function Hero() {
         ))}
       </div>
 
-      <div className="relative mx-auto max-w-3xl text-center">
+      <div className="relative mx-auto mt-14 max-w-3xl text-center sm:mt-0">
         <h1
           aria-label="Show the food. Sell more of it."
           className="font-display text-[clamp(2.7rem,7vw,4.5rem)] font-medium leading-[1.02] tracking-[-0.03em]"
@@ -196,7 +196,7 @@ function Hero() {
       </div>
 
       {/* Signature object: the diner menu, cropped at the fold like Modal's cube */}
-      <div className="rise relative mt-16" style={{ "--i": 3 } as React.CSSProperties}>
+      <div className="rise relative mt-12 sm:mt-16" style={{ "--i": 3 } as React.CSSProperties}>
         <div className="max-h-[480px] overflow-hidden pt-10 sm:max-h-[520px]">
           <PhoneMockup />
         </div>
