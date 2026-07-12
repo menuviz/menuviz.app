@@ -203,7 +203,7 @@ export function PriceSyncDemo() {
   return (
     <div ref={ref} aria-hidden="true" className="flex items-center justify-center gap-3 sm:gap-4">
       <div className="w-[150px] rounded-lg border border-hairline bg-carbon/60 p-3">
-        <p className="text-[11px] font-medium text-mint">Smash burger</p>
+        <p className="text-[11px] font-medium text-mint">Mozzarella sticks</p>
         <div className="mt-2 flex items-center justify-between rounded-md border border-pine px-2.5 py-1.5">
           <span className="text-[12px] text-sage-dim">−</span>
           <span className="text-[12px] font-medium tabular-nums text-mint">
@@ -233,14 +233,14 @@ export function PriceSyncDemo() {
       </svg>
       <div className="w-[104px] overflow-hidden rounded-lg border border-hairline bg-ground">
         <Image
-          src={burger.img}
+          src="/images/dishes/mozzarella-sticks.png"
           alt=""
           width={104}
           height={64}
           className="h-16 w-full object-cover"
         />
         <div className="p-2">
-          <p className="text-[10px] font-medium leading-snug text-mint">Smash burger</p>
+          <p className="text-[10px] font-medium leading-snug text-mint">Mozzarella sticks</p>
           <p
             className={`mt-0.5 text-[10px] tabular-nums text-sage-dim ${
               phase === 2 ? "demo-pulse" : ""
@@ -271,63 +271,23 @@ export function InstantLoadDemo() {
         />
       </div>
       <div
-        className={`w-[116px] overflow-hidden rounded-lg border border-[#132018]/15 bg-[#fdfefd] transition-[opacity,filter,transform] duration-300 ease-out-quart ${
+        className={`w-[116px] overflow-hidden rounded-lg border border-white/50 bg-gradient-to-b from-white/85 to-[#e2f0e5]/65 shadow-[0_10px_24px_-12px_rgba(19,32,24,0.35)] backdrop-blur-md transition-[opacity,filter,transform] duration-300 ease-out-quart ${
           phase >= 1 ? "scale-100 opacity-100 blur-none" : "scale-95 opacity-0 blur-[4px]"
         }`}
       >
-        <Image
-          src={dishes[1].img}
-          alt=""
-          width={116}
-          height={60}
-          className="h-[60px] w-full object-cover"
-        />
+        <div className="relative h-[60px] w-full">
+          <Image src="/images/dishes/fried-chicken.png" alt="" fill sizes="116px" className="object-cover" />
+        </div>
         <div className="p-2 text-[#132018]">
-          <p className="text-[10px] font-medium leading-snug">Margherita</p>
-          <p className="mt-0.5 text-[10px] tabular-nums opacity-70">$17</p>
+          <p className="text-[10px] font-medium leading-snug">Fried chicken</p>
+          <p className="mt-0.5 text-[10px] tabular-nums opacity-70">$14</p>
         </div>
       </div>
     </div>
   );
 }
 
-const T2P_PHASES = [2400, 3200] as const;
-
-export function TextToPhotoDemo() {
-  const { ref, phase: raw, reduce } = useDemoLoop(T2P_PHASES);
-  const phase = reduce ? 1 : raw;
-  return (
-    <div ref={ref} aria-hidden="true" className="relative flex h-[132px] items-center justify-center">
-      <div
-        className={`absolute flex w-[180px] justify-between border-b border-hairline pb-1.5 text-[12px] text-sage transition-[opacity,filter] duration-[400ms] ease-out-quart ${
-          phase === 0 ? "opacity-100 blur-none" : "opacity-0 blur-[3px]"
-        }`}
-      >
-        <span>Smash burger</span>
-        <span className="tabular-nums">$15</span>
-      </div>
-      <div
-        className={`w-[116px] overflow-hidden rounded-lg border border-hairline bg-carbon transition-[opacity,filter,transform] duration-[400ms] ease-out-quart ${
-          phase === 1 ? "scale-100 opacity-100 blur-none" : "scale-[0.97] opacity-0 blur-[3px]"
-        }`}
-      >
-        <Image
-          src={burger.img}
-          alt=""
-          width={116}
-          height={66}
-          className="h-[66px] w-full object-cover"
-        />
-        <div className="p-2">
-          <p className="text-[10px] font-medium leading-snug text-mint">Smash burger</p>
-          <p className="mt-0.5 text-[10px] tabular-nums text-sage-dim">$15</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const LANG_NAMES = ["Lamb skewers", "Brochetas de cordero", "羊肉串"];
+const LANG_NAMES = ["Lamb skewers", "Brochetas", "羊肉串"];
 const LANG_PHASES = [2000, 2000, 2000] as const;
 
 export function LanguageDemo() {
@@ -335,7 +295,7 @@ export function LanguageDemo() {
   const phase = reduce ? 0 : raw;
   return (
     <div ref={ref} aria-hidden="true" className="flex justify-center">
-      <div className="flex w-[180px] items-center gap-2.5 rounded-lg border border-[#132018]/15 bg-[#fdfefd]/70 p-2.5 text-[#132018]">
+      <div className="flex w-[180px] items-center gap-2.5 rounded-lg border border-white/50 bg-gradient-to-br from-white/85 to-[#e2f0e5]/60 p-2.5 text-[#132018] shadow-[0_10px_24px_-12px_rgba(19,32,24,0.3)] backdrop-blur-md">
         <Image
           src={dishes[2].img}
           alt=""
