@@ -6,6 +6,10 @@ import CyclingWord from "./components/cycling-word";
 import TrueFocus from "./components/true-focus";
 import { GradientGlow } from "./components/gradient-glow";
 import { GradientGlowDevPanel } from "./components/gradient-glow-dev-panel";
+import { BentoBeams } from "./components/bento-beams";
+import { BeamsDevPanel } from "./components/beams-dev-panel";
+import { bentoBeamsStore } from "./components/beams-store";
+import { DishViewer } from "./components/dish-viewer";
 import {
   finalCtaGradientStore,
   bentoGradientStore,
@@ -17,7 +21,6 @@ import {
   MiniPhoneDemo,
   PriceSyncDemo,
   InstantLoadDemo,
-  TextToPhotoDemo,
   LanguageDemo,
   LocationRippleDemo,
 } from "./components/micro-demos";
@@ -303,6 +306,7 @@ type Card = {
   support: string;
   tone: "dark" | "mint" | "wash";
   wide?: boolean;
+  beams?: boolean;
   demo: React.ReactNode;
 };
 
@@ -312,6 +316,7 @@ const cards: Card[] = [
     support: "Edit from your phone. Every code at every table updates instantly.",
     tone: "dark",
     wide: true,
+    beams: true,
     demo: <PriceSyncDemo />,
   },
   {
@@ -324,7 +329,7 @@ const cards: Card[] = [
     statement: "The dish, in 3D.",
     support: "Diners order more when they can turn the plate and see every angle.",
     tone: "dark",
-    demo: <TextToPhotoDemo />,
+    demo: <DishViewer />,
   },
   {
     statement: "Any language.",
@@ -376,6 +381,7 @@ function Bento() {
                 card.wide ? "md:col-span-2" : "",
                 dark ? "bg-ground" : "",
                 card.tone === "mint" ? "bg-mint" : "",
+                card.beams ? "relative overflow-hidden" : "",
               ].join(" ")}
               style={
                 card.tone === "wash"
@@ -386,8 +392,14 @@ function Bento() {
                   : undefined
               }
             >
+              {card.beams && (
+                <>
+                  <BentoBeams />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ground via-ground/55 to-transparent" />
+                </>
+              )}
               {card.wide ? (
-                <div className="grid h-full gap-8 md:grid-cols-[1fr_auto] md:items-center">
+                <div className="relative z-10 grid h-full gap-8 md:grid-cols-[1fr_auto] md:items-center">
                   <div className="flex h-full flex-col justify-between gap-8">
                     {statement}
                     {support}
@@ -395,7 +407,7 @@ function Bento() {
                   {card.demo}
                 </div>
               ) : (
-                <div className="flex h-full flex-col">
+                <div className="relative z-10 flex h-full flex-col">
                   {statement}
                   <div className="flex flex-1 items-center justify-center py-7">{card.demo}</div>
                   {support}
@@ -514,6 +526,7 @@ export default function Home() {
           <GradientGlowDevPanel store={heroGradientStore} label="Hero" showRandomize />
           <GradientGlowDevPanel store={bentoGradientStore} label="Bento" showRandomize />
           <GradientGlowDevPanel store={finalCtaGradientStore} label="Final CTA" />
+          <BeamsDevPanel store={bentoBeamsStore} label="Bento" />
         </div>
       )}
     </>
