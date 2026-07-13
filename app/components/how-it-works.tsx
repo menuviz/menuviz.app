@@ -4,6 +4,7 @@
 // three-step cards render; on md+ with motion allowed, the pinned
 // scroll-driven stage takes over.
 
+import { useEffect, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import BlurText from "./blur-text";
 import { EditorDemo, StampDemo, MiniPhoneDemo } from "./micro-demos";
@@ -28,7 +29,17 @@ export const steps = [
 ];
 
 export function HowItWorks() {
-  const reduce = useReducedMotion() ?? false;
+  const prefersReduce = useReducedMotion() ?? false;
+  // Server and first client render always assume motion is allowed (`false`)
+  // so hydration matches; reduced-motion visitors swap to the card layout
+  // right after mount, once the real preference is known.
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    // Deliberate one-time sync from the external matchMedia preference into
+    // state post-mount — not a derived-state anti-pattern.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setReduce(prefersReduce);
+  }, [prefersReduce]);
 
   const cards = (
     <div className={reduce ? "" : "md:hidden"}>

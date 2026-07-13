@@ -22,7 +22,7 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 const ScrollDishCanvas = dynamic(() => import("./scroll-dish-canvas"), { ssr: false });
 
-const MM_STAGE = "(min-width: 768px) and (prefers-reduced-motion: no-preference)";
+const MM_STAGE = "(min-width: 48rem) and (prefers-reduced-motion: no-preference)";
 const MOUNT_MARGIN = "640px 0px";
 
 // GLB/network failure inside the canvas escapes through Suspense to the
@@ -56,6 +56,9 @@ export function HowItWorksStage() {
   const [inView, setInView] = useState(false);
 
   useEffect(() => {
+    // Below md (or under reduced motion) the stage never mounts, so skip the
+    // chunk + GLB prefetch — phones shouldn't pay for a canvas they can't show.
+    if (!window.matchMedia(MM_STAGE).matches) return;
     import("./scroll-dish-canvas"); // prefetch chunk + GLB before the section arrives
   }, []);
 
@@ -75,6 +78,16 @@ export function HowItWorksStage() {
       const mm = gsap.matchMedia();
       mm.add(MM_STAGE, () => {
         const p = poseRef.current;
+
+        // Centering lives on GSAP's own xPercent/yPercent channels (not the
+        // Tailwind -translate-x/y-1/2 utilities) so the pixel y tweens below
+        // compose with it instead of overwriting it when GSAP first parses
+        // the computed transform.
+        gsap.set('[data-hiw="heading"], [data-hiw="phone"]', { xPercent: -50, yPercent: -50 });
+        gsap.set('[data-hiw="text-0"], [data-hiw="text-1"], [data-hiw="text-2"], [data-hiw="qr"]', {
+          yPercent: -50,
+        });
+
         const tl = gsap.timeline({
           defaults: { ease: "none" },
           scrollTrigger: {
@@ -172,7 +185,7 @@ export function HowItWorksStage() {
           {/* QR card, chapter 2: same white-chip treatment as the hero sticker */}
           <div
             data-hiw="qr"
-            className="absolute right-[16%] top-1/2 w-52 -translate-y-1/2 rounded-xl bg-[#fdfefd] p-3.5 text-[#111511] opacity-0 shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
+            className="absolute right-[16%] top-1/2 w-52 rounded-xl bg-[#fdfefd] p-3.5 text-[#111511] opacity-0 shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
           >
             <QrCode />
             <p className="mt-2 text-center text-[11px] font-medium tracking-wide text-[#3c463c]">
@@ -184,7 +197,7 @@ export function HowItWorksStage() {
               screen stays empty because the wrap model floats in front of it */}
           <div
             data-hiw="phone"
-            className="absolute left-1/2 top-1/2 w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-[2.6rem] border border-circuit/70 bg-carbon p-2 opacity-0 shadow-[0_32px_80px_rgba(0,0,0,0.35)]"
+            className="absolute left-1/2 top-1/2 w-[280px] rounded-[2.6rem] border border-circuit/70 bg-carbon p-2 opacity-0 shadow-[0_32px_80px_rgba(0,0,0,0.35)]"
           >
             <div className="flex aspect-[390/844] flex-col justify-end overflow-hidden rounded-[2.2rem] bg-[#0b0e0c] p-4">
               <div className="flex items-center justify-between rounded-lg border border-hairline bg-carbon/80 px-3 py-2.5">
@@ -199,19 +212,19 @@ export function HowItWorksStage() {
         <div className="relative z-30 h-full">
           <h2
             data-hiw="heading"
-            className="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 text-center font-display text-[clamp(2.2rem,4.5vw,3.4rem)] font-medium leading-[1.08] tracking-[-0.02em] text-phosphor"
+            className="absolute left-1/2 top-[38%] text-center font-display text-[clamp(2.2rem,4.5vw,3.4rem)] font-medium leading-[1.08] tracking-[-0.02em] text-phosphor"
           >
             How it works
           </h2>
 
-          <div data-hiw="text-0" className="absolute left-[8%] top-1/2 max-w-md -translate-y-1/2 opacity-0">
+          <div data-hiw="text-0" className="absolute left-[8%] top-1/2 max-w-md opacity-0">
             <h3 className="font-display text-[clamp(1.8rem,3vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.018em] text-mint">
               {steps[0].title}
             </h3>
             <p className="mt-4 max-w-[38ch] text-[16px] leading-relaxed text-sage">{steps[0].body}</p>
           </div>
 
-          <div data-hiw="text-1" className="absolute left-[10%] top-1/2 max-w-sm -translate-y-1/2 opacity-0">
+          <div data-hiw="text-1" className="absolute left-[10%] top-1/2 max-w-sm opacity-0">
             <h3 className="font-display text-[clamp(1.8rem,3vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.018em] text-mint">
               {steps[1].title}
             </h3>
@@ -220,7 +233,7 @@ export function HowItWorksStage() {
 
           {/* Chapter 3 sits on the light mint wash, so its text flips dark
               (same ink pair the bento's wash card uses). */}
-          <div data-hiw="text-2" className="absolute left-[7%] top-1/2 max-w-sm -translate-y-1/2 opacity-0">
+          <div data-hiw="text-2" className="absolute left-[7%] top-1/2 max-w-sm opacity-0">
             <h3 className="font-display text-[clamp(1.8rem,3vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.018em] text-[#132018]">
               {steps[2].title}
             </h3>
