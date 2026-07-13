@@ -16,6 +16,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { steps } from "./how-it-works";
 import { INITIAL_POSE, type Pose } from "./dish-pose";
+import { QrCode } from "./qr-code";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -105,6 +106,25 @@ export function HowItWorksStage() {
         tl.to('[data-hiw="text-1"]', { autoAlpha: 0, y: -28, filter: "blur(8px)", duration: 5 }, 58);
         tl.fromTo('[data-hiw="text-2"]', textIn, { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 5 }, 72);
 
+        // QR card: scales in center-right while the wrap idles small on the left,
+        // then tilts up and away as chapter 3 approaches.
+        tl.fromTo(
+          '[data-hiw="qr"]',
+          { autoAlpha: 0, scale: 0.85, rotate: -5, y: 60 },
+          { autoAlpha: 1, scale: 1, rotate: 2, y: 0, duration: 6 },
+          38
+        );
+        tl.to('[data-hiw="qr"]', { autoAlpha: 0, y: -80, rotate: 8, duration: 5 }, 58);
+
+        // Phone frame: rises from the bottom as the wrap grows back toward center,
+        // arriving just before the wrap shrinks into its screen (pose tween at 70).
+        tl.fromTo(
+          '[data-hiw="phone"]',
+          { autoAlpha: 0, y: "55vh" },
+          { autoAlpha: 1, y: 0, duration: 8 },
+          64
+        );
+
         // Wrap pose choreography (applied by the canvas in Task 3; tweening
         // it now is harmless and keeps all timing in one place).
         tl.to(p, { y: -0.05, x: 0.22, scale: 1.35, rx: 0.2, duration: 14 }, 0); // rise + settle right
@@ -148,7 +168,32 @@ export function HowItWorksStage() {
           )}
         </div>
 
-        {/* Props layer (QR card, phone frame) arrives in Task 4 (z-10) */}
+        <div aria-hidden="true" className="absolute inset-0 z-10">
+          {/* QR card, chapter 2: same white-chip treatment as the hero sticker */}
+          <div
+            data-hiw="qr"
+            className="absolute right-[16%] top-1/2 w-52 -translate-y-1/2 rounded-xl bg-[#fdfefd] p-3.5 text-[#111511] opacity-0 shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
+          >
+            <QrCode />
+            <p className="mt-2 text-center text-[11px] font-medium tracking-wide text-[#3c463c]">
+              SCAN FOR MENU
+            </p>
+          </div>
+
+          {/* Phone frame, chapter 3: bezel only (adapted from PhoneMockup) — the
+              screen stays empty because the wrap model floats in front of it */}
+          <div
+            data-hiw="phone"
+            className="absolute left-1/2 top-1/2 w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-[2.6rem] border border-circuit/70 bg-carbon p-2 opacity-0 shadow-[0_32px_80px_rgba(0,0,0,0.35)]"
+          >
+            <div className="flex aspect-[390/844] flex-col justify-end overflow-hidden rounded-[2.2rem] bg-[#0b0e0c] p-4">
+              <div className="flex items-center justify-between rounded-lg border border-hairline bg-carbon/80 px-3 py-2.5">
+                <span className="text-[12px] font-medium text-mint">Fried chicken wrap</span>
+                <span className="text-[12px] tabular-nums text-sage">$12</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Text layer */}
         <div className="relative z-30 h-full">
@@ -166,7 +211,7 @@ export function HowItWorksStage() {
             <p className="mt-4 max-w-[38ch] text-[16px] leading-relaxed text-sage">{steps[0].body}</p>
           </div>
 
-          <div data-hiw="text-1" className="absolute left-[8%] top-1/2 max-w-md -translate-y-1/2 opacity-0">
+          <div data-hiw="text-1" className="absolute left-[10%] top-1/2 max-w-sm -translate-y-1/2 opacity-0">
             <h3 className="font-display text-[clamp(1.8rem,3vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.018em] text-mint">
               {steps[1].title}
             </h3>
@@ -175,7 +220,7 @@ export function HowItWorksStage() {
 
           {/* Chapter 3 sits on the light mint wash, so its text flips dark
               (same ink pair the bento's wash card uses). */}
-          <div data-hiw="text-2" className="absolute left-[8%] top-1/2 max-w-md -translate-y-1/2 opacity-0">
+          <div data-hiw="text-2" className="absolute left-[7%] top-1/2 max-w-sm -translate-y-1/2 opacity-0">
             <h3 className="font-display text-[clamp(1.8rem,3vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.018em] text-[#132018]">
               {steps[2].title}
             </h3>
