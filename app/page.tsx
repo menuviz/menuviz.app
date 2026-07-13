@@ -11,6 +11,7 @@ import { BentoBeams } from "./components/bento-beams";
 import { BeamsDevPanel } from "./components/beams-dev-panel";
 import { bentoBeamsStore } from "./components/beams-store";
 import { DishViewer } from "./components/dish-viewer";
+import { Wordmark } from "./components/wordmark";
 import {
   finalCtaGradientStore,
   bentoGradientStore,
@@ -73,9 +74,7 @@ function Nav() {
       <nav className="mx-auto flex max-w-4xl items-center justify-between rounded-full border border-hairline bg-carbon/85 py-1 pl-5 pr-1.5 shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1),0_4px_6px_-4px_rgba(0,0,0,0.1)] backdrop-blur-[10px]">
         <a href="#" className="flex items-center gap-2.5" aria-label="MenuViz home">
           <Mark className="h-5 w-5 text-emerald" />
-          <span className="font-display text-[17px] font-medium tracking-tight text-phosphor">
-            MenuViz
-          </span>
+          <Wordmark className="h-4 w-auto text-phosphor" />
         </a>
         <div className="hidden items-center gap-8 text-[14px] font-medium tracking-[-0.026em] text-mint md:flex">
           <a
@@ -446,7 +445,7 @@ function Footer() {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-10">
         <div className="flex items-center gap-2.5">
           <Mark className="h-4 w-4 text-emerald" />
-          <span className="font-display text-[15px] font-medium text-phosphor">MenuViz</span>
+          <Wordmark className="h-[13px] w-auto text-phosphor" />
         </div>
         <a
           href="mailto:hello@menuviz.app"

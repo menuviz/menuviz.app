@@ -1,4 +1,9 @@
 import { ImageResponse } from "next/og";
+import {
+  WORDMARK_PATH,
+  WORDMARK_RATIO,
+  WORDMARK_VIEWBOX,
+} from "./components/wordmark";
 
 // Generated at build time (static export) — becomes the og:image for the
 // landing page. Mirrors the site's phosphor-dark system: near-black canvas,
@@ -29,15 +34,28 @@ export default function OpenGraphImage() {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-        <div
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 5,
-            backgroundColor: emerald,
-          }}
-        />
-        <div style={{ fontSize: 34, color: ink, fontWeight: 600 }}>MenuViz</div>
+        {/* Viewfinder mark, matching Mark in page.tsx */}
+        <svg viewBox="0 0 24 24" width={30} height={30}>
+          <g
+            fill="none"
+            stroke={emerald}
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <path d="M3 8V6a3 3 0 0 1 3-3h2" />
+            <path d="M16 3h2a3 3 0 0 1 3 3v2" />
+            <path d="M21 16v2a3 3 0 0 1-3 3h-2" />
+            <path d="M8 21H6a3 3 0 0 1-3-3v-2" />
+          </g>
+          <rect x="8.2" y="7.2" width="7.6" height="9.6" rx="1.6" fill={emerald} />
+        </svg>
+        <svg
+          viewBox={WORDMARK_VIEWBOX}
+          width={Math.round(36 * WORDMARK_RATIO)}
+          height={36}
+        >
+          <path fill={ink} d={WORDMARK_PATH} />
+        </svg>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
