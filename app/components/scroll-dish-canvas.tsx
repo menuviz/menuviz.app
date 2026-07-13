@@ -34,7 +34,13 @@ function InvalidateBridge({
   return null;
 }
 
-function PosedDish({ poseRef }: { poseRef: React.MutableRefObject<Pose> }) {
+function PosedDish({
+  poseRef,
+  overrideRef,
+}: {
+  poseRef: React.MutableRefObject<Pose>;
+  overrideRef?: React.MutableRefObject<Pose | null>;
+}) {
   const { scene } = useGLTF(DISH_URL);
   const group = useRef<THREE.Group | null>(null);
   // The bento's DishViewer renders the same GLB, and useGLTF hands both
@@ -52,7 +58,9 @@ function PosedDish({ poseRef }: { poseRef: React.MutableRefObject<Pose> }) {
   useFrame(({ viewport }) => {
     const g = group.current;
     if (!g) return;
-    const p = poseRef.current;
+    // The dev pose panel can freeze the model at an editable pose; its
+    // override wins over the scrubbed pose while active.
+    const p = overrideRef?.current ?? poseRef.current;
     g.position.set(p.x * viewport.width, p.y * viewport.height, 0);
     g.rotation.set(p.rx, p.ry, p.rz);
     g.scale.setScalar(p.scale * norm);
@@ -72,10 +80,12 @@ function PosedDish({ poseRef }: { poseRef: React.MutableRefObject<Pose> }) {
 
 export default function ScrollDishCanvas({
   poseRef,
+  overrideRef,
   invalidateRef,
   className,
 }: {
   poseRef: React.MutableRefObject<Pose>;
+  overrideRef?: React.MutableRefObject<Pose | null>;
   invalidateRef: React.MutableRefObject<(() => void) | null>;
   className?: string;
 }) {
@@ -91,7 +101,7 @@ export default function ScrollDishCanvas({
       <directionalLight position={[-2, -1, -2]} intensity={0.5} />
       <Suspense fallback={null}>
         <InvalidateBridge invalidateRef={invalidateRef} />
-        <PosedDish poseRef={poseRef} />
+        <PosedDish poseRef={poseRef} overrideRef={overrideRef} />
       </Suspense>
     </Canvas>
   );

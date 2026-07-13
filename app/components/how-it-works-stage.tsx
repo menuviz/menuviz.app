@@ -17,6 +17,7 @@ import { useGSAP } from "@gsap/react";
 import { steps } from "./how-it-works";
 import { INITIAL_POSE, type Pose } from "./dish-pose";
 import { QrCode } from "./qr-code";
+import { PoseDevPanel } from "./pose-dev-panel";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -52,6 +53,7 @@ class ModelBoundary extends Component<{ children: ReactNode }, { failed: boolean
 export function HowItWorksStage() {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const poseRef = useRef<Pose>({ ...INITIAL_POSE });
+  const poseOverrideRef = useRef<Pose | null>(null);
   const invalidateRef = useRef<(() => void) | null>(null);
   const [inView, setInView] = useState(false);
 
@@ -200,6 +202,7 @@ export function HowItWorksStage() {
             <ModelBoundary>
               <ScrollDishCanvas
                 poseRef={poseRef}
+                overrideRef={poseOverrideRef}
                 invalidateRef={invalidateRef}
                 className="effect-reveal h-full w-full"
               />
@@ -267,6 +270,12 @@ export function HowItWorksStage() {
           </div>
         </div>
       </div>
+
+      {process.env.NODE_ENV === "development" && (
+        <div className="fixed bottom-4 left-4 z-[60]">
+          <PoseDevPanel poseRef={poseRef} overrideRef={poseOverrideRef} invalidateRef={invalidateRef} />
+        </div>
+      )}
     </div>
   );
 }
