@@ -181,7 +181,10 @@ export function HowItWorksStage() {
         // by the backdrop outro fade: 92 + 8.)
         tl.to(p, { ry: 1.15, duration: 14.4 }, 0);
         tl.to(p, { ry: 5.73, duration: 65.6 }, 14.4);
-        tl.to(p, { x: -0.28, y: -0.02, scale: 0.85, duration: 10 }, 28); // sweep left, shrink
+        // Sweep left + shrink, and carry the orientation back to the original
+        // path (rx 0.2, rz 0) so every beat after the hand-tuned rise hold —
+        // QR park, regrow, phone tumble — moves exactly as before.
+        tl.to(p, { x: -0.28, y: -0.02, scale: 0.85, rx: 0.2, rz: 0, duration: 10 }, 28);
         tl.to(p, { x: 0, scale: 1.15, duration: 12 }, 58); // drift back to center, grow
         // Settle into the phone, tumbling (pitch + roll on top of the
         // ever-running yaw) into the hand-tuned final pose (values picked
