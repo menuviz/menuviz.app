@@ -149,8 +149,8 @@ export function HowItWorksStage() {
         // before the outro fades the backdrop to void.
         tl.to('[data-hiw="text-2"]', { autoAlpha: 0, y: -28, filter: "blur(8px)", duration: 5 }, 90);
 
-        // QR card: scales in center-right while the wrap idles small on the left,
-        // then tilts up and away as chapter 3 approaches.
+        // QR card: scales in center-right while the wrap idles small at the
+        // bottom-center, then tilts up and away as chapter 3 approaches.
         tl.fromTo(
           '[data-hiw="qr"]',
           { autoAlpha: 0, scale: 0.85, rotate: -5, y: 60 },
@@ -181,11 +181,12 @@ export function HowItWorksStage() {
         // by the backdrop outro fade: 92 + 8.)
         tl.to(p, { ry: 1.15, duration: 14.4 }, 0);
         tl.to(p, { ry: 5.73, duration: 65.6 }, 14.4);
-        // Sweep left + shrink, and carry the orientation back to the original
-        // path (rx 0.2, rz 0) so every beat after the hand-tuned rise hold —
-        // QR park, regrow, phone tumble — moves exactly as before.
-        tl.to(p, { x: -0.28, y: -0.02, scale: 0.85, rx: 0.2, rz: 0, duration: 10 }, 28);
-        tl.to(p, { x: 0, scale: 1.15, duration: 12 }, 58); // drift back to center, grow
+        // Duck down to a small bottom-center park for the QR chapter (text
+        // left, QR right, dish low-center — parking it left collided with
+        // the step-2 text), carrying the orientation back to the original
+        // path (rx 0.2, rz 0) on the way.
+        tl.to(p, { x: -0.02, y: -0.31, scale: 0.68, rx: 0.2, rz: 0, duration: 10 }, 28);
+        tl.to(p, { x: 0, y: -0.02, scale: 1.15, duration: 12 }, 58); // rise back to center, grow
         // Settle into the phone, tumbling (pitch + roll on top of the
         // ever-running yaw) into the hand-tuned final pose (values picked
         // live via the wrap-pose dev panel).
