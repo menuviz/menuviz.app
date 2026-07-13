@@ -54,6 +54,9 @@ export function HowItWorksStage() {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const poseRef = useRef<Pose>({ ...INITIAL_POSE });
   const poseOverrideRef = useRef<Pose | null>(null);
+  // Timeline progress on the 0-100 unit scale (i.e. tween position numbers),
+  // surfaced in the dev pose panel so tuned poses can be tied to a beat.
+  const progressRef = useRef(0);
   const invalidateRef = useRef<(() => void) | null>(null);
   const [inView, setInView] = useState(false);
 
@@ -108,7 +111,10 @@ export function HowItWorksStage() {
             end: "bottom bottom",
             scrub: 1,
           },
-          onUpdate: () => invalidateRef.current?.(),
+          onUpdate: () => {
+            progressRef.current = tl.progress() * 100;
+            invalidateRef.current?.();
+          },
         });
 
         // Backdrop chapters. The stage enters and exits as the page's void —
@@ -275,7 +281,12 @@ export function HowItWorksStage() {
 
       {process.env.NODE_ENV === "development" && (
         <div className="fixed bottom-4 left-4 z-[60]">
-          <PoseDevPanel poseRef={poseRef} overrideRef={poseOverrideRef} invalidateRef={invalidateRef} />
+          <PoseDevPanel
+            poseRef={poseRef}
+            overrideRef={poseOverrideRef}
+            progressRef={progressRef}
+            invalidateRef={invalidateRef}
+          />
         </div>
       )}
     </div>

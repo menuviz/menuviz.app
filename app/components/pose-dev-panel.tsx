@@ -21,10 +21,12 @@ const round = (p: Pose): Pose => ({
 export function PoseDevPanel({
   poseRef,
   overrideRef,
+  progressRef,
   invalidateRef,
 }: {
   poseRef: React.MutableRefObject<Pose>;
   overrideRef: React.MutableRefObject<Pose | null>;
+  progressRef: React.MutableRefObject<number>;
   invalidateRef: React.MutableRefObject<(() => void) | null>;
 }) {
   const [open, setOpen] = useState(false);
@@ -33,6 +35,7 @@ export function PoseDevPanel({
   // Starts from INITIAL_POSE (refs can't be read during render); the live
   // readout interval syncs it to the real scrubbed pose within 100ms of open.
   const [pose, setPose] = useState<Pose>(INITIAL_POSE);
+  const [progress, setProgress] = useState(0);
 
   // Live readout while the timeline owns the pose.
   useEffect(() => {
@@ -40,6 +43,15 @@ export function PoseDevPanel({
     const timer = setInterval(() => setPose(round(poseRef.current)), 100);
     return () => clearInterval(timer);
   }, [open, overriding, poseRef]);
+
+  // Scroll position on the timeline's 0-100 unit scale — the same numbers
+  // the tween positions use. Keeps updating even while overriding, so a
+  // tuned pose can be pinned to the beat it belongs to.
+  useEffect(() => {
+    if (!open) return;
+    const timer = setInterval(() => setProgress(+progressRef.current.toFixed(1)), 100);
+    return () => clearInterval(timer);
+  }, [open, progressRef]);
 
   if (process.env.NODE_ENV !== "development") return null;
 
@@ -66,7 +78,7 @@ export function PoseDevPanel({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(JSON.stringify(pose, null, 2));
+      await navigator.clipboard.writeText(JSON.stringify({ t: progress, ...pose }, null, 2));
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     } catch {
@@ -95,6 +107,12 @@ export function PoseDevPanel({
         </button>
       }
     >
+      <Section title="Scroll">
+        <div className="flex items-center justify-between py-1 text-[11px]">
+          <span className="text-fern">timeline t</span>
+          <span className="font-mono text-[11px] text-moss">{progress.toFixed(1)} / 100</span>
+        </div>
+      </Section>
       <Section title="Mode">
         <CheckboxRow label="override" checked={overriding} onChange={setOverride} />
         {!overriding && (
