@@ -165,15 +165,17 @@ export function HowItWorksStage() {
         // Wrap pose choreography (applied by the canvas in Task 3; tweening
         // it now is harmless and keeps all timing in one place).
         tl.to(p, { y: -0.05, x: 0.22, scale: 1.75, rx: 0.2, duration: 14 }, 0); // rise + settle right, hero-sized
-        // Continuous scrubbed turn; spanning 0-100 also anchors the timeline
-        // at exactly 100 units, so every position number reads as a
-        // percentage of the pinned scroll.
-        tl.to(p, { ry: 6.5, duration: 100 }, 0);
+        // Continuous scrubbed yaw, arriving at the hand-tuned final value
+        // exactly when the settle beat ends (80) and holding through the
+        // outro. (Timeline length stays anchored at 100 by the backdrop
+        // outro fade: 92 + 8.)
+        tl.to(p, { ry: 5.73, duration: 80 }, 0);
         tl.to(p, { x: -0.28, y: -0.02, scale: 0.85, duration: 10 }, 28); // sweep left, shrink
         tl.to(p, { x: 0, scale: 1.15, duration: 12 }, 58); // drift back to center, grow
-        // Settle into the phone with a roll (rz) on top of the ever-running
-        // yaw, so the drop-in reads as a tumble rather than a straight sink.
-        tl.to(p, { scale: 0.34, y: -0.02, rz: 1.05, duration: 10 }, 70);
+        // Settle into the phone, tumbling (pitch + roll on top of the
+        // ever-running yaw) into the hand-tuned final pose (values picked
+        // live via the wrap-pose dev panel).
+        tl.to(p, { scale: 0.3, y: -0.015, rx: 1.82, rz: 0.92, duration: 10 }, 70);
       });
     },
     { scope: trackRef }
