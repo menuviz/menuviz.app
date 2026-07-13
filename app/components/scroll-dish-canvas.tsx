@@ -14,6 +14,7 @@ import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF, Center } from "@react-three/drei";
 import type { Pose } from "./dish-pose";
+import type { StageState } from "./stage-state";
 
 const DISH_URL = "https://cdn.menuviz.app/ouii/models/dishes/fried-chicken-wrap.glb";
 
@@ -32,6 +33,66 @@ function InvalidateBridge({
     };
   }, [invalidate, invalidateRef]);
   return null;
+}
+
+// GSAP color tweens write rgba(...) strings into the stage object mid-tween;
+// THREE.Color.set() would parse those too but warns about the alpha channel
+// on every frame, so parse rgb() ourselves and fall back to set() for hex.
+function applyCssColor(color: THREE.Color, css: string) {
+  const m = css.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (m) color.setRGB(+m[1] / 255, +m[2] / 255, +m[3] / 255, THREE.SRGBColorSpace);
+  else color.set(css);
+}
+
+// Lights + camera, driven per frame from the stage state the timeline tweens
+// (same ref pattern as the pose). Priority -1 so the camera is already in
+// place when PosedDish computes its viewport-fraction position.
+function StageRig({
+  stageRef,
+  overrideRef,
+}: {
+  stageRef: React.MutableRefObject<StageState>;
+  overrideRef?: React.MutableRefObject<StageState | null>;
+}) {
+  const ambient = useRef<THREE.AmbientLight | null>(null);
+  const key = useRef<THREE.DirectionalLight | null>(null);
+  const rim = useRef<THREE.DirectionalLight | null>(null);
+  // Skip re-parsing color strings that haven't changed since the last frame.
+  const applied = useRef({ keyColor: "", ambientColor: "" });
+
+  useFrame(({ camera }) => {
+    const s = overrideRef?.current ?? stageRef.current;
+    if (ambient.current) {
+      ambient.current.intensity = s.ambientIntensity;
+      if (applied.current.ambientColor !== s.ambientColor) {
+        applyCssColor(ambient.current.color, s.ambientColor);
+        applied.current.ambientColor = s.ambientColor;
+      }
+    }
+    if (key.current) {
+      key.current.intensity = s.keyIntensity;
+      if (applied.current.keyColor !== s.keyColor) {
+        applyCssColor(key.current.color, s.keyColor);
+        applied.current.keyColor = s.keyColor;
+      }
+    }
+    if (rim.current) rim.current.intensity = s.rimIntensity;
+
+    camera.position.z = s.camZ;
+    const persp = camera as THREE.PerspectiveCamera;
+    if (persp.fov !== s.camFov) {
+      persp.fov = s.camFov;
+      persp.updateProjectionMatrix();
+    }
+  }, -1);
+
+  return (
+    <>
+      <ambientLight ref={ambient} intensity={1.2} />
+      <directionalLight ref={key} position={[2, 4, 3]} intensity={2} />
+      <directionalLight ref={rim} position={[-2, -1, -2]} intensity={0.5} />
+    </>
+  );
 }
 
 function PosedDish({
@@ -55,13 +116,17 @@ function PosedDish({
     return 2 / Math.max(size.x, size.y, size.z);
   }, [dish]);
 
-  useFrame(({ viewport }) => {
+  useFrame((state) => {
     const g = group.current;
     if (!g) return;
     // The dev pose panel can freeze the model at an editable pose; its
     // override wins over the scrubbed pose while active.
     const p = overrideRef?.current ?? poseRef.current;
-    g.position.set(p.x * viewport.width, p.y * viewport.height, 0);
+    // Recompute the viewport against the live camera (the StageRig dollies
+    // it) so pose x/y stay true screen fractions no matter where the camera
+    // is — the cached state.viewport is only valid for the initial camera.
+    const v = state.viewport.getCurrentViewport(state.camera);
+    g.position.set(p.x * v.width, p.y * v.height, 0);
     g.rotation.set(p.rx, p.ry, p.rz);
     g.scale.setScalar(p.scale * norm);
   });
@@ -81,11 +146,15 @@ function PosedDish({
 export default function ScrollDishCanvas({
   poseRef,
   overrideRef,
+  stageRef,
+  stageOverrideRef,
   invalidateRef,
   className,
 }: {
   poseRef: React.MutableRefObject<Pose>;
   overrideRef?: React.MutableRefObject<Pose | null>;
+  stageRef: React.MutableRefObject<StageState>;
+  stageOverrideRef?: React.MutableRefObject<StageState | null>;
   invalidateRef: React.MutableRefObject<(() => void) | null>;
   className?: string;
 }) {
@@ -96,9 +165,7 @@ export default function ScrollDishCanvas({
       camera={{ position: [0, 0, 5.5], fov: 32 }}
       className={className}
     >
-      <ambientLight intensity={1.2} />
-      <directionalLight position={[2, 4, 3]} intensity={2} />
-      <directionalLight position={[-2, -1, -2]} intensity={0.5} />
+      <StageRig stageRef={stageRef} overrideRef={stageOverrideRef} />
       <Suspense fallback={null}>
         <InvalidateBridge invalidateRef={invalidateRef} />
         <PosedDish poseRef={poseRef} overrideRef={overrideRef} />
