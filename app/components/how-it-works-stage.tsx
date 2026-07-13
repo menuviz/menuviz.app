@@ -4,8 +4,9 @@
 // the matchMedia below is the sole guard; the parent handles rendering the
 // card fallback). A ~400vh track holds a sticky 100vh stage; one scrubbed
 // GSAP timeline drives backdrop chapter colors, the intro heading, the three
-// step texts, the props, and (via poseRef, applied in the canvas's useFrame)
-// the wrap model. GSAP tweens the plain pose object — never React state — so
+// step texts, the props, (via poseRef, applied in the canvas's useFrame) the
+// wrap model, and (via stageRef) the light rig, camera dolly, and the DOM
+// ground shadow. GSAP tweens plain objects — never React state — so
 // scrubbing causes zero re-renders.
 
 import dynamic from "next/dynamic";
@@ -16,12 +17,25 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { steps } from "./how-it-works";
 import { INITIAL_POSE, type Pose } from "./dish-pose";
+import { INITIAL_STAGE, type StageState } from "./stage-state";
 import { QrCode } from "./qr-code";
 import { PoseDevPanel } from "./pose-dev-panel";
+import { StageDevPanel } from "./stage-dev-panel";
+import { ShaderDevPanel } from "./shader-dev-panel";
+import { stageShaderStore } from "./shader-store";
+import { QrFxDevPanel } from "./qr-fx-dev-panel";
+import { qrFxStore } from "./qr-fx-store";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-const ScrollDishCanvas = dynamic(() => import("./scroll-dish-canvas"), { ssr: false });
+// Both come through webgl-bundle (not their own files) so three.js lands in
+// one shared chunk — see webgl-bundle.ts.
+const ScrollDishCanvas = dynamic(() => import("./webgl-bundle").then((m) => m.ScrollDishCanvas), {
+  ssr: false,
+});
+const StageShader = dynamic(() => import("./webgl-bundle").then((m) => m.StageShader), {
+  ssr: false,
+});
 
 const MM_STAGE = "(min-width: 48rem) and (prefers-reduced-motion: no-preference)";
 const MOUNT_MARGIN = "640px 0px";
@@ -52,19 +66,37 @@ class ModelBoundary extends Component<{ children: ReactNode }, { failed: boolean
 
 export function HowItWorksStage() {
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const stageElRef = useRef<HTMLDivElement | null>(null);
   const poseRef = useRef<Pose>({ ...INITIAL_POSE });
   const poseOverrideRef = useRef<Pose | null>(null);
+  // Scene state (lights, camera, ground shadow) — tweened by the same
+  // timeline, applied by the canvas's StageRig and the DOM shadow below.
+  const stageRef = useRef<StageState>({ ...INITIAL_STAGE });
+  const stageOverrideRef = useRef<StageState | null>(null);
+  const shadowRef = useRef<HTMLDivElement | null>(null);
+  const canvasWrapRef = useRef<HTMLDivElement | null>(null);
+  // Stage dimensions cached on ScrollTrigger refresh so the per-scroll-frame
+  // shadow placement never reads layout.
+  const sizeRef = useRef({ w: 0, h: 0 });
+  const applyShadowRef = useRef<(() => void) | null>(null);
+  // QR pre-focus degradation: the timeline scrubs focus 0→1 as the brackets
+  // lock; the look itself (blur/halftone/dither amounts) lives in qrFxStore.
+  const qrFxRef = useRef({ focus: 0 });
+  const qrContentRef = useRef<HTMLDivElement | null>(null);
+  const qrHalftoneRef = useRef<HTMLDivElement | null>(null);
+  const qrDitherRef = useRef<HTMLDivElement | null>(null);
   // Timeline progress on the 0-100 unit scale (i.e. tween position numbers),
   // surfaced in the dev pose panel so tuned poses can be tied to a beat.
   const progressRef = useRef(0);
   const invalidateRef = useRef<(() => void) | null>(null);
   const [inView, setInView] = useState(false);
+  const [shaderInView, setShaderInView] = useState(false);
 
   useEffect(() => {
     // Below md (or under reduced motion) the stage never mounts, so skip the
     // chunk + GLB prefetch — phones shouldn't pay for a canvas they can't show.
     if (!window.matchMedia(MM_STAGE).matches) return;
-    import("./scroll-dish-canvas"); // prefetch chunk + GLB before the section arrives
+    import("./webgl-bundle"); // prefetch the shared WebGL chunk + GLB before the section arrives
   }, []);
 
   useEffect(() => {
@@ -88,11 +120,123 @@ export function HowItWorksStage() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    // Unlike the dish canvas (demand-rendered, kept mounted), the shader
+    // backdrop animates continuously — so it toggles with visibility, like
+    // the bento beams card, and is torn down once the visitor scrolls past.
+    const observer = new IntersectionObserver(
+      ([entry]) => setShaderInView(entry.isIntersecting),
+      { threshold: 0, rootMargin: MOUNT_MARGIN }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
       mm.add(MM_STAGE, () => {
         const p = poseRef.current;
+        const s = stageRef.current;
+        // Deterministic start values on every matchMedia (re-)init — the
+        // refs survive breakpoint flips, the timeline's from-values don't.
+        Object.assign(p, INITIAL_POSE);
+        Object.assign(s, INITIAL_STAGE);
+
+        // Ground shadow under the wrap: a DOM ellipse tracked to the pose
+        // (screen fractions → pixels) rather than a three.js contact shadow,
+        // because the dish traverses the whole viewport — there is no
+        // consistent ground plane for a shadow-catcher to live on.
+        const applyShadow = () => {
+          const el = shadowRef.current;
+          if (!el) return;
+          const pose = poseOverrideRef.current ?? poseRef.current;
+          const stage = stageOverrideRef.current ?? stageRef.current;
+          const { w, h } = sizeRef.current;
+          const scale = pose.scale * stage.shadowScale;
+          gsap.set(el, {
+            x: (0.5 + pose.x) * w,
+            y: (0.5 - pose.y + stage.shadowOffset) * h,
+            xPercent: -50,
+            yPercent: -50,
+            scaleX: scale,
+            scaleY: scale,
+            opacity: stage.shadowOpacity,
+            force3D: true,
+          });
+        };
+        // Depth-of-field on the dish: a CSS blur on its (otherwise
+        // transparent) canvas wrapper reads exactly like the model falling
+        // out of the focal plane, without a postprocessing pass. Guarded to
+        // "none" at 0 so there's no idle compositing cost.
+        let lastBlur = -1;
+        const applyDishBlur = () => {
+          const el = canvasWrapRef.current;
+          if (!el) return;
+          const stage = stageOverrideRef.current ?? stageRef.current;
+          const blur = Math.round(stage.dishBlur * 100) / 100;
+          if (blur === lastBlur) return;
+          lastBlur = blur;
+          gsap.set(el, { filter: blur < 0.05 ? "none" : `blur(${blur}px)` });
+        };
+        // One handle for the dev panels: re-applies every DOM-side scene bit.
+        applyShadowRef.current = () => {
+          applyShadow();
+          applyDishBlur();
+        };
+        const measure = () => {
+          const el = stageElRef.current;
+          if (el) sizeRef.current = { w: el.clientWidth, h: el.clientHeight };
+        };
+        measure();
+
+        // QR pre-focus degradation: blur/contrast on the card content plus
+        // halftone and dither overlays, all scaled by (1 - focus). The
+        // timeline drives fx.focus as the brackets lock; the store holds the
+        // dev-tunable amounts, and its preview flag pins the card degraded.
+        const fx = qrFxRef.current;
+        fx.focus = 0;
+        let ditherCache = { freq: -1, uri: "" };
+        const ditherUri = (freq: number) => {
+          if (ditherCache.freq !== freq) {
+            const svg =
+              `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128">` +
+              `<filter id="d"><feTurbulence type="fractalNoise" baseFrequency="${freq}" numOctaves="1" stitchTiles="stitch"/>` +
+              `<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 0 0"/>` +
+              `<feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer></filter>` +
+              `<rect width="128" height="128" filter="url(#d)"/></svg>`;
+            ditherCache = { freq, uri: `url("data:image/svg+xml,${encodeURIComponent(svg)}")` };
+          }
+          return ditherCache.uri;
+        };
+        const applyQrFx = () => {
+          const content = qrContentRef.current;
+          const halftone = qrHalftoneRef.current;
+          const dither = qrDitherRef.current;
+          if (!content || !halftone || !dither) return;
+          const cfg = qrFxStore.getConfig();
+          const d = cfg.preview ? 1 : 1 - fx.focus;
+          const dot = cfg.halftoneDot * 50;
+          gsap.set(content, {
+            filter:
+              d < 0.001 ? "none" : `blur(${cfg.blurPx * d}px) contrast(${1 + (cfg.contrast - 1) * d})`,
+          });
+          gsap.set(halftone, {
+            opacity: cfg.halftoneOpacity * d,
+            backgroundImage: `radial-gradient(circle, rgba(10, 20, 13, 0.95) ${dot}%, transparent ${dot}%)`,
+            backgroundSize: `${cfg.halftoneSizePx}px ${cfg.halftoneSizePx}px`,
+            mixBlendMode: cfg.halftoneBlend,
+          });
+          gsap.set(dither, {
+            opacity: cfg.ditherOpacity * d,
+            backgroundImage: ditherUri(cfg.ditherFreq),
+            backgroundSize: `${cfg.ditherScalePx}px ${cfg.ditherScalePx}px`,
+          });
+        };
+        applyQrFx();
+        const unsubQrFx = qrFxStore.subscribe(applyQrFx);
 
         // Centering lives on GSAP's own xPercent/yPercent channels (not the
         // Tailwind -translate-x/y-1/2 utilities) so the pixel y tweens below
@@ -110,9 +254,13 @@ export function HowItWorksStage() {
             start: "top top",
             end: "bottom bottom",
             scrub: 1,
+            onRefresh: measure,
           },
           onUpdate: () => {
             progressRef.current = tl.progress() * 100;
+            applyShadow();
+            applyDishBlur();
+            applyQrFx();
             invalidateRef.current?.();
           },
         });
@@ -129,6 +277,12 @@ export function HowItWorksStage() {
           { autoAlpha: 0, duration: 8 },
           92
         );
+
+        // Shader blob backdrop: alive through the dark chapters (it paints
+        // over the flat green/black layers, which double as its fallback),
+        // handing off to the mint wash as chapter 3 arrives.
+        tl.fromTo('[data-hiw="shader"]', { autoAlpha: 0 }, { autoAlpha: 1, duration: 6 }, 0);
+        tl.to('[data-hiw="shader"]', { autoAlpha: 0, duration: 7 }, 63);
 
         // Intro heading
         tl.fromTo(
@@ -149,8 +303,8 @@ export function HowItWorksStage() {
         // before the outro fades the backdrop to void.
         tl.to('[data-hiw="text-2"]', { autoAlpha: 0, y: -28, filter: "blur(8px)", duration: 5 }, 90);
 
-        // QR card: scales in center-right while the wrap idles small at the
-        // bottom-center, then tilts up and away as chapter 3 approaches.
+        // QR card: scales in center-right while the wrap slips offstage,
+        // then tilts up and away as chapter 3 approaches.
         tl.fromTo(
           '[data-hiw="qr"]',
           { autoAlpha: 0, scale: 0.85, rotate: -5, y: 60 },
@@ -158,6 +312,20 @@ export function HowItWorksStage() {
           38
         );
         tl.to('[data-hiw="qr"]', { autoAlpha: 0, y: -80, rotate: 8, duration: 5 }, 58);
+
+        // Mid-chapter scan moment: viewfinder brackets (the logo motif)
+        // converge onto the parked card, then the caption flips to its
+        // scanned state — a state change, not a crossfade, hence the lag.
+        tl.fromTo(
+          '[data-hiw="qr-brackets"]',
+          { autoAlpha: 0, scale: 1.35 },
+          { autoAlpha: 1, scale: 1, duration: 4 },
+          46
+        );
+        // The card rides in degraded (focus 0) and the lock pulls it sharp.
+        tl.fromTo(fx, { focus: 0 }, { focus: 1, duration: 4 }, 46);
+        tl.to('[data-hiw="qr-cap-idle"]', { autoAlpha: 0, duration: 2 }, 50);
+        tl.to('[data-hiw="qr-cap-done"]', { autoAlpha: 1, duration: 2.5 }, 50.5);
 
         // Phone frame: rises from the bottom as the wrap grows back toward center,
         // arriving just before the wrap shrinks into its screen (pose tween at 70).
@@ -168,11 +336,9 @@ export function HowItWorksStage() {
           64
         );
 
-        // Wrap pose choreography (applied by the canvas in Task 3; tweening
-        // it now is harmless and keeps all timing in one place).
-        // Rise + settle right, hero-sized — end state hand-tuned via the
-        // wrap-pose dev panel (rx 1.623 ≡ the tuned -4.66 mod 2π, shorter
-        // travel, same orientation).
+        // Wrap pose choreography. Rise + settle right, hero-sized — end
+        // state hand-tuned via the wrap-pose dev panel (rx 1.623 ≡ the tuned
+        // -4.66 mod 2π, shorter travel, same orientation).
         tl.to(p, { y: -0.05, x: 0.135, scale: 1.36, rx: 1.623, rz: 0.14, duration: 14 }, 0);
         // Continuous scrubbed yaw in two segments so it passes through the
         // hand-tuned rise pose (ry 1.15 at t=14.4) and still lands on the
@@ -181,16 +347,84 @@ export function HowItWorksStage() {
         // by the backdrop outro fade: 92 + 8.)
         tl.to(p, { ry: 1.15, duration: 14.4 }, 0);
         tl.to(p, { ry: 5.73, duration: 65.6 }, 14.4);
-        // Duck down to a small bottom-center park for the QR chapter (text
-        // left, QR right, dish low-center — parking it left collided with
-        // the step-2 text), carrying the orientation back to the original
-        // path (rx 0.2, rz 0) on the way.
-        tl.to(p, { x: -0.02, y: -0.31, scale: 0.68, rx: 0.2, rz: 0, duration: 10 }, 28);
-        tl.to(p, { x: 0, y: -0.02, scale: 1.15, duration: 12 }, 58); // rise back to center, grow
+        // Offstage for the QR chapter: the wrap exits below the fold as the
+        // card arrives (the chapter belongs to the QR + brackets), carrying
+        // its orientation back to the original path (rx 0.2, rz 0) so the
+        // re-entrance at 58 rises clean into the phone landing. Long window
+        // + accelerate-in so it drifts off the hold instead of being yanked
+        // (the only linear-speed exit read as too fast against the site's
+        // eased motion language).
+        tl.to(p, { x: 0, y: -0.75, scale: 0.6, rx: 0.2, rz: 0, duration: 14, ease: "power1.in" }, 26);
+        tl.to(p, { x: 0, y: -0.02, scale: 1.15, duration: 12 }, 58); // re-enter: rise to center, grow
         // Settle into the phone, tumbling (pitch + roll on top of the
         // ever-running yaw) into the hand-tuned final pose (values picked
         // live via the wrap-pose dev panel).
         tl.to(p, { scale: 0.3, y: -0.015, rx: 1.82, rz: 0.92, duration: 10 }, 70);
+
+        // Scene state: ground shadow, per-chapter light rig, and a small
+        // camera dolly. Light shifts ride the backdrop crossfades exactly
+        // (33 and 63, dur 7); camera moves only during pose *transitions*
+        // (duck 28-38, rise-back 58-70) and is back at its baseline before
+        // the hand-tuned phone settle at 70, so every tuned pose is viewed
+        // under the camera it was tuned with. Chapter-1 light values are
+        // INITIAL_STAGE itself, so no tween is needed before 28.
+        tl.to(s, { shadowOpacity: 0.42, duration: 8 }, 16);
+        // Shadow leaves with the wrap (offstage during the QR chapter); the
+        // camera still eases in for the card and returns before the settle.
+        tl.to(s, { shadowOpacity: 0, duration: 10 }, 26);
+        tl.to(s, { camZ: 5.35, camFov: 33, duration: 10 }, 28);
+        // Focus handoff: the exit tween's power1.in means the wrap barely
+        // moves until ~30, so focus holds until it's visibly departing and
+        // falls off exactly across the fast half of the drop (30-38, fully
+        // soft just before it leaves the frame at ~40). The QR card arrives
+        // soft at 38 and the bracket lock at 46 is where the camera finds
+        // focus again; the wrap then rises back INTO focus at 58-68, landing
+        // sharp before the phone settle at 70.
+        tl.to(s, { dishBlur: 2, duration: 8 }, 30);
+        tl.to(s, { dishBlur: 0, duration: 10 }, 58);
+        tl.to(
+          s,
+          {
+            keyIntensity: 1.5,
+            keyColor: "#e8f0ff",
+            ambientIntensity: 0.7,
+            ambientColor: "#ccd6d0",
+            rimIntensity: 0.75,
+            duration: 7,
+          },
+          33
+        );
+        // Re-entry: the shadow returns wide and low (hand-tuned settle
+        // capture at t≈80: broad pool under the phone) as the camera comes
+        // back to baseline.
+        tl.to(
+          s,
+          { shadowScale: 2.5, shadowOpacity: 0.5, shadowOffset: 0.355, camZ: 5.5, camFov: 32, duration: 12 },
+          58
+        );
+        // Mint-chapter rig, hand-tuned via the stage dev panel: key nearly
+        // off with a pale mint tint, ambient carrying the scene, strong rim.
+        tl.to(
+          s,
+          {
+            keyIntensity: 0.05,
+            keyColor: "#d7eee1",
+            ambientIntensity: 1.38,
+            ambientColor: "#ffffff",
+            rimIntensity: 1.49,
+            duration: 7,
+          },
+          63
+        );
+        // Shadow holds under the phone through the settle and leaves with
+        // the backdrops during the outro.
+        tl.to(s, { shadowOpacity: 0, duration: 8 }, 92);
+
+        // matchMedia revert: drop the store subscription (the timeline and
+        // tweens are cleaned up by gsap.matchMedia itself).
+        return () => {
+          unsubQrFx();
+        };
       });
     },
     { scope: trackRef }
@@ -198,7 +432,7 @@ export function HowItWorksStage() {
 
   return (
     <div ref={trackRef} className="relative h-[400vh]">
-      <div className="sticky top-0 h-screen overflow-hidden">
+      <div ref={stageElRef} className="sticky top-0 h-screen overflow-hidden">
         {/* Backdrop chapters: deep green, then near-black, then mint wash.
             All start transparent (page void shows through) — the timeline
             fades them in and back out at the section's ends. */}
@@ -214,12 +448,21 @@ export function HowItWorksStage() {
           }}
         />
 
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-20">
+        {/* Shader blob backdrop for the dark chapters. Sits above the flat
+            backdrop layers (DOM order) and below every z-indexed layer; the
+            timeline fades the wrapper, the observer handles mount/teardown. */}
+        <div aria-hidden="true" data-hiw="shader" className="absolute inset-0 opacity-0">
+          {shaderInView && <StageShader className="effect-reveal h-full w-full" />}
+        </div>
+
+        <div ref={canvasWrapRef} aria-hidden="true" className="pointer-events-none absolute inset-0 z-20">
           {inView && (
             <ModelBoundary>
               <ScrollDishCanvas
                 poseRef={poseRef}
                 overrideRef={poseOverrideRef}
+                stageRef={stageRef}
+                stageOverrideRef={stageOverrideRef}
                 invalidateRef={invalidateRef}
                 className="effect-reveal h-full w-full"
               />
@@ -228,15 +471,79 @@ export function HowItWorksStage() {
         </div>
 
         <div aria-hidden="true" className="absolute inset-0 z-10">
+          {/* Ground shadow under the wrap — placed per scroll frame from the
+              pose (see applyShadow); first in the layer so it sits beneath
+              the QR card and phone too. Softness comes from the gradient
+              falloff itself, no blur filter. */}
+          <div
+            ref={shadowRef}
+            className="pointer-events-none absolute left-0 top-0 h-[110px] w-[400px] opacity-0 will-change-transform"
+            style={{
+              background: "radial-gradient(50% 50% at 50% 50%, rgba(0,0,0,0.5), transparent 72%)",
+            }}
+          />
+
           {/* QR card, chapter 2: same white-chip treatment as the hero sticker */}
           <div
             data-hiw="qr"
-            className="absolute right-[15%] top-1/2 w-[300px] rounded-2xl bg-[#fdfefd] p-5 text-[#111511] opacity-0 shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
+            className="absolute right-[15%] top-1/2 w-[300px] rounded-2xl bg-[#eef2ec] p-5 text-[#111511] opacity-0 shadow-[0_24px_60px_rgba(0,0,0,0.55)]"
           >
-            <QrCode />
-            <p className="mt-3 text-center text-[13px] font-medium tracking-wide text-[#3c463c]">
-              SCAN FOR MENU
-            </p>
+            {/* Viewfinder brackets (the logo motif) — a child of the card so
+                they inherit its in/out/tilt tweens; -inset-5 keeps them out
+                on the dark backdrop where phosphor reads. */}
+            <div data-hiw="qr-brackets" className="pointer-events-none absolute -inset-5 opacity-0">
+              <span className="absolute left-0 top-0 h-6 w-6 rounded-tl-lg border-l-2 border-t-2 border-phosphor" />
+              <span className="absolute right-0 top-0 h-6 w-6 rounded-tr-lg border-r-2 border-t-2 border-phosphor" />
+              <span className="absolute bottom-0 left-0 h-6 w-6 rounded-bl-lg border-b-2 border-l-2 border-phosphor" />
+              <span className="absolute bottom-0 right-0 h-6 w-6 rounded-br-lg border-b-2 border-r-2 border-phosphor" />
+            </div>
+            {/* Only the QR image takes the pre-focus blur (see applyQrFx);
+                the brackets and caption stay sharp — the caption is a label,
+                not part of the unfocused subject. */}
+            <div ref={qrContentRef}>
+              <QrCode />
+            </div>
+            {/* Stacked captions: idle → scanned state flip at t≈50 */}
+            <div className="mt-3 grid text-center text-[13px] font-medium tracking-wide">
+              <p data-hiw="qr-cap-idle" className="col-start-1 row-start-1 text-[#3c463c]">
+                SCAN FOR MENU
+              </p>
+              <p
+                data-hiw="qr-cap-done"
+                className="col-start-1 row-start-1 flex items-center justify-center gap-1.5 text-[#111511] opacity-0"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" aria-hidden="true">
+                  <path
+                    d="M3 8.5l3.2 3.2L13 5"
+                    fill="none"
+                    stroke="#2f9e6e"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                MENU FOUND
+              </p>
+            </div>
+            {/* Pre-focus degradation overlays (halftone dots + dither
+                noise), driven by applyQrFx and gone once focus resolves. */}
+            <div ref={qrHalftoneRef} className="pointer-events-none absolute inset-0 rounded-2xl opacity-0" />
+            <div
+              ref={qrDitherRef}
+              className="pointer-events-none absolute inset-0 rounded-2xl opacity-0"
+              style={{ imageRendering: "pixelated" }}
+            />
+            {/* Ambient shading: the stage is a dim green room, so the card
+                can't stay device-white — a directional falloff (lit from the
+                upper left, falling into green-black) seats it in the scene's
+                light, covering the QR jpeg's own white too. */}
+            <div
+              className="pointer-events-none absolute inset-0 rounded-2xl"
+              style={{
+                background:
+                  "linear-gradient(148deg, rgba(255,255,255,0.07) 0%, rgba(10,20,13,0.12) 45%, rgba(10,20,13,0.38) 100%)",
+              }}
+            />
           </div>
 
           {/* Phone frame, chapter 3: bezel only (adapted from PhoneMockup) — the
@@ -289,13 +596,22 @@ export function HowItWorksStage() {
       </div>
 
       {process.env.NODE_ENV === "development" && (
-        <div className="fixed bottom-4 left-4 z-[60]">
+        <div className="fixed bottom-4 left-4 z-[60] flex flex-col gap-2">
           <PoseDevPanel
             poseRef={poseRef}
             overrideRef={poseOverrideRef}
             progressRef={progressRef}
             invalidateRef={invalidateRef}
           />
+          <StageDevPanel
+            stageRef={stageRef}
+            overrideRef={stageOverrideRef}
+            progressRef={progressRef}
+            invalidateRef={invalidateRef}
+            applyShadowRef={applyShadowRef}
+          />
+          <ShaderDevPanel store={stageShaderStore} />
+          <QrFxDevPanel store={qrFxStore} />
         </div>
       )}
     </div>
