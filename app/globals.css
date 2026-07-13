@@ -39,6 +39,25 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Lenis (site-wide smooth scroll — see smooth-scroll.tsx). Recommended
+   stylesheet from the Lenis docs; the scroll-behavior override matters,
+   since CSS smooth scrolling fights Lenis's programmatic scrolling. When
+   Lenis is skipped (reduced motion), these classes never appear and the
+   rules above apply untouched. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
 body {
   background: var(--color-void);
   color: var(--color-sage);
