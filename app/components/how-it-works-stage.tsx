@@ -99,9 +99,18 @@ export function HowItWorksStage() {
           onUpdate: () => invalidateRef.current?.(),
         });
 
-        // Backdrop chapters
+        // Backdrop chapters. The stage enters and exits as the page's void —
+        // deep green fades in with the intro and every layer fades back out
+        // during the outro — so there's no visible seam against the hero
+        // above or the bento below.
+        tl.fromTo('[data-hiw="bg-green"]', { autoAlpha: 0 }, { autoAlpha: 1, duration: 6 }, 0);
         tl.fromTo('[data-hiw="bg-black"]', { autoAlpha: 0 }, { autoAlpha: 1, duration: 7 }, 33);
         tl.fromTo('[data-hiw="bg-mint"]', { autoAlpha: 0 }, { autoAlpha: 1, duration: 7 }, 63);
+        tl.to(
+          '[data-hiw="bg-green"], [data-hiw="bg-black"], [data-hiw="bg-mint"]',
+          { autoAlpha: 0, duration: 8 },
+          92
+        );
 
         // Intro heading
         tl.fromTo(
@@ -118,6 +127,9 @@ export function HowItWorksStage() {
         tl.fromTo('[data-hiw="text-1"]', textIn, { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 5 }, 40);
         tl.to('[data-hiw="text-1"]', { autoAlpha: 0, y: -28, filter: "blur(8px)", duration: 5 }, 58);
         tl.fromTo('[data-hiw="text-2"]', textIn, { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 5 }, 72);
+        // Dark ink needs the light mint wash behind it, so it exits just
+        // before the outro fades the backdrop to void.
+        tl.to('[data-hiw="text-2"]', { autoAlpha: 0, y: -28, filter: "blur(8px)", duration: 5 }, 90);
 
         // QR card: scales in center-right while the wrap idles small on the left,
         // then tilts up and away as chapter 3 approaches.
@@ -140,14 +152,14 @@ export function HowItWorksStage() {
 
         // Wrap pose choreography (applied by the canvas in Task 3; tweening
         // it now is harmless and keeps all timing in one place).
-        tl.to(p, { y: -0.05, x: 0.22, scale: 1.35, rx: 0.2, duration: 14 }, 0); // rise + settle right
+        tl.to(p, { y: -0.05, x: 0.22, scale: 1.75, rx: 0.2, duration: 14 }, 0); // rise + settle right, hero-sized
         // Continuous scrubbed turn; spanning 0-100 also anchors the timeline
         // at exactly 100 units, so every position number reads as a
         // percentage of the pinned scroll.
         tl.to(p, { ry: 6.5, duration: 100 }, 0);
-        tl.to(p, { x: -0.3, y: -0.02, scale: 0.6, duration: 10 }, 28); // sweep left, shrink
-        tl.to(p, { x: 0, scale: 0.95, duration: 12 }, 58); // drift back to center, grow
-        tl.to(p, { scale: 0.5, y: -0.02, duration: 10 }, 70); // settle into the phone
+        tl.to(p, { x: -0.28, y: -0.02, scale: 0.85, duration: 10 }, 28); // sweep left, shrink
+        tl.to(p, { x: 0, scale: 1.15, duration: 12 }, 58); // drift back to center, grow
+        tl.to(p, { scale: 0.52, y: -0.02, duration: 10 }, 70); // settle into the phone
       });
     },
     { scope: trackRef }
@@ -156,8 +168,10 @@ export function HowItWorksStage() {
   return (
     <div ref={trackRef} className="relative h-[400vh]">
       <div className="sticky top-0 h-screen overflow-hidden">
-        {/* Backdrop chapters: base deep green, then near-black, then mint wash */}
-        <div aria-hidden="true" className="absolute inset-0 bg-[#0c2016]" />
+        {/* Backdrop chapters: deep green, then near-black, then mint wash.
+            All start transparent (page void shows through) — the timeline
+            fades them in and back out at the section's ends. */}
+        <div aria-hidden="true" data-hiw="bg-green" className="absolute inset-0 bg-[#0c2016] opacity-0" />
         <div aria-hidden="true" data-hiw="bg-black" className="absolute inset-0 bg-[#040604] opacity-0" />
         <div
           aria-hidden="true"
@@ -185,10 +199,10 @@ export function HowItWorksStage() {
           {/* QR card, chapter 2: same white-chip treatment as the hero sticker */}
           <div
             data-hiw="qr"
-            className="absolute right-[16%] top-1/2 w-52 rounded-xl bg-[#fdfefd] p-3.5 text-[#111511] opacity-0 shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
+            className="absolute right-[15%] top-1/2 w-[300px] rounded-2xl bg-[#fdfefd] p-5 text-[#111511] opacity-0 shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
           >
             <QrCode />
-            <p className="mt-2 text-center text-[11px] font-medium tracking-wide text-[#3c463c]">
+            <p className="mt-3 text-center text-[13px] font-medium tracking-wide text-[#3c463c]">
               SCAN FOR MENU
             </p>
           </div>
@@ -197,12 +211,12 @@ export function HowItWorksStage() {
               screen stays empty because the wrap model floats in front of it */}
           <div
             data-hiw="phone"
-            className="absolute left-1/2 top-1/2 w-[280px] rounded-[2.6rem] border border-circuit/70 bg-carbon p-2 opacity-0 shadow-[0_32px_80px_rgba(0,0,0,0.35)]"
+            className="absolute left-1/2 top-1/2 w-[320px] rounded-[2.9rem] border border-circuit/70 bg-carbon p-2 opacity-0 shadow-[0_32px_80px_rgba(0,0,0,0.35)]"
           >
-            <div className="flex aspect-[390/844] flex-col justify-end overflow-hidden rounded-[2.2rem] bg-[#0b0e0c] p-4">
-              <div className="flex items-center justify-between rounded-lg border border-hairline bg-carbon/80 px-3 py-2.5">
-                <span className="text-[12px] font-medium text-mint">Fried chicken wrap</span>
-                <span className="text-[12px] tabular-nums text-sage">$12</span>
+            <div className="flex aspect-[390/780] flex-col justify-end overflow-hidden rounded-[2.4rem] bg-[#0b0e0c] p-4">
+              <div className="flex items-center justify-between rounded-lg border border-hairline bg-carbon/80 px-3.5 py-3">
+                <span className="text-[13px] font-medium text-mint">Fried chicken wrap</span>
+                <span className="text-[13px] tabular-nums text-sage">$12</span>
               </div>
             </div>
           </div>
@@ -212,32 +226,32 @@ export function HowItWorksStage() {
         <div className="relative z-30 h-full">
           <h2
             data-hiw="heading"
-            className="absolute left-1/2 top-[38%] text-center font-display text-[clamp(2.2rem,4.5vw,3.4rem)] font-medium leading-[1.08] tracking-[-0.02em] text-phosphor"
+            className="absolute left-1/2 top-[38%] text-center font-display text-[clamp(2.6rem,5.5vw,4.2rem)] font-medium leading-[1.08] tracking-[-0.02em] text-phosphor"
           >
             How it works
           </h2>
 
-          <div data-hiw="text-0" className="absolute left-[8%] top-1/2 max-w-md opacity-0">
-            <h3 className="font-display text-[clamp(1.8rem,3vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.018em] text-mint">
+          <div data-hiw="text-0" className="absolute left-[8%] top-1/2 max-w-xl opacity-0">
+            <h3 className="font-display text-[clamp(2.2rem,3.8vw,3.4rem)] font-medium leading-[1.08] tracking-[-0.018em] text-mint">
               {steps[0].title}
             </h3>
-            <p className="mt-4 max-w-[38ch] text-[16px] leading-relaxed text-sage">{steps[0].body}</p>
+            <p className="mt-5 max-w-[40ch] text-[18px] leading-relaxed text-sage">{steps[0].body}</p>
           </div>
 
-          <div data-hiw="text-1" className="absolute left-[10%] top-1/2 max-w-sm opacity-0">
-            <h3 className="font-display text-[clamp(1.8rem,3vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.018em] text-mint">
+          <div data-hiw="text-1" className="absolute left-[9%] top-1/2 max-w-lg opacity-0">
+            <h3 className="font-display text-[clamp(2.2rem,3.8vw,3.4rem)] font-medium leading-[1.08] tracking-[-0.018em] text-mint">
               {steps[1].title}
             </h3>
-            <p className="mt-4 max-w-[38ch] text-[16px] leading-relaxed text-sage">{steps[1].body}</p>
+            <p className="mt-5 max-w-[40ch] text-[18px] leading-relaxed text-sage">{steps[1].body}</p>
           </div>
 
           {/* Chapter 3 sits on the light mint wash, so its text flips dark
               (same ink pair the bento's wash card uses). */}
-          <div data-hiw="text-2" className="absolute left-[7%] top-1/2 max-w-sm opacity-0">
-            <h3 className="font-display text-[clamp(1.8rem,3vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.018em] text-[#132018]">
+          <div data-hiw="text-2" className="absolute left-[7%] top-1/2 max-w-lg opacity-0">
+            <h3 className="font-display text-[clamp(2.2rem,3.8vw,3.4rem)] font-medium leading-[1.08] tracking-[-0.018em] text-[#132018]">
               {steps[2].title}
             </h3>
-            <p className="mt-4 max-w-[38ch] text-[16px] leading-relaxed text-[#3d5a48]">{steps[2].body}</p>
+            <p className="mt-5 max-w-[40ch] text-[18px] leading-relaxed text-[#3d5a48]">{steps[2].body}</p>
           </div>
         </div>
       </div>

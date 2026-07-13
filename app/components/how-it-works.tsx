@@ -42,7 +42,7 @@ export function HowItWorks() {
   }, [prefersReduce]);
 
   const cards = (
-    <div className={reduce ? "" : "md:hidden"}>
+    <div className={`border-t border-hairline ${reduce ? "" : "md:hidden"}`}>
       <div className="mx-auto max-w-6xl px-6 py-24 sm:py-28">
         <h2 className="font-display text-[clamp(1.9rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.02em] text-phosphor">
           <BlurText text="How it works" />
@@ -68,10 +68,13 @@ export function HowItWorks() {
   );
 
   return (
-    <section id="how-it-works" className="scroll-mt-24 border-t border-hairline">
+    // No border on the section itself: the stage blends out of the page's
+    // void on both ends, so any hairline would read as a seam. The cards
+    // variant carries its own border instead.
+    <section id="how-it-works" className="scroll-mt-24">
       {cards}
       {!reduce && (
-        <div className="hidden md:block">
+        <div className="hidden pb-28 md:block">
           <HowItWorksStage />
         </div>
       )}
