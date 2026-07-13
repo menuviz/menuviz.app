@@ -17,7 +17,9 @@ import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { bentoBeamsStore } from "./beams-store";
 
-const Beams = dynamic(() => import("./beams"), { ssr: false });
+// Via webgl-bundle so three.js is shared with the other WebGL consumers
+// instead of duplicated into this chunk — see webgl-bundle.ts.
+const Beams = dynamic(() => import("./webgl-bundle").then((m) => m.Beams), { ssr: false });
 
 const MOUNT_MARGIN = "640px 0px";
 
@@ -28,7 +30,7 @@ export function BentoBeams() {
   const config = bentoBeamsStore.useConfig();
 
   useEffect(() => {
-    import("./beams");
+    import("./webgl-bundle");
   }, []);
 
   useEffect(() => {

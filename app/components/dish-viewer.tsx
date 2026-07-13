@@ -13,7 +13,11 @@
 import dynamic from "next/dynamic";
 import { useDemoLoop } from "./micro-demos";
 
-const DishModel = dynamic(() => import("./dish-model"), { ssr: false });
+// Via webgl-bundle so three.js is shared with the other WebGL consumers
+// instead of duplicated into this chunk — see webgl-bundle.ts.
+const DishModel = dynamic(() => import("./webgl-bundle").then((m) => m.DishModel), {
+  ssr: false,
+});
 
 const DISH_URL = "https://cdn.menuviz.app/ouii/models/dishes/fried-chicken-wrap.glb";
 const T2P_PHASES = [2400, 3200] as const;

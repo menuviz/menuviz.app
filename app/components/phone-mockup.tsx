@@ -31,7 +31,7 @@ export function PhoneMockup() {
       <div className="w-[300px] rounded-[2.9rem] border border-circuit/70 bg-carbon p-2 sm:w-[320px]">
         <div className="relative aspect-[390/844] overflow-hidden rounded-[2.4rem] bg-[#0b0e0c]">
           <Image
-            src="/images/menu-preview.png"
+            src="/images/menu-preview.jpg"
             alt="MenuViz 3D menu open on a phone — drag to browse dishes, tap to customise"
             fill
             sizes="320px"

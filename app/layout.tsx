@@ -36,6 +36,9 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        {/* The 3D dish GLB loads from the product CDN mid-page; warming the
+            connection here shaves the DNS+TLS round trips off its fetch. */}
+        <link rel="preconnect" href="https://cdn.menuviz.app" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap"
           rel="stylesheet"
