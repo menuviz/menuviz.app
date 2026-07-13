@@ -171,7 +171,7 @@ export function HowItWorksStage() {
         tl.to(p, { x: 0, scale: 1.15, duration: 12 }, 58); // drift back to center, grow
         // Settle into the phone with a roll (rz) on top of the ever-running
         // yaw, so the drop-in reads as a tumble rather than a straight sink.
-        tl.to(p, { scale: 0.42, y: -0.02, rz: 1.05, duration: 10 }, 70);
+        tl.to(p, { scale: 0.34, y: -0.02, rz: 1.05, duration: 10 }, 70);
       });
     },
     { scope: trackRef }
