@@ -6,7 +6,7 @@
 // scene background became a `backgroundColor` prop so it can match the
 // card's surface color instead of clashing with it.
 
-import { forwardRef, useImperativeHandle, useEffect, useRef, useMemo } from "react";
+import { forwardRef, useImperativeHandle, useRef, useMemo } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { PerspectiveCamera } from "@react-three/drei";
@@ -327,7 +327,9 @@ function createStackedPlanesBufferGeometry(
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
   geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-  geometry.computeVertexNormals();
+  // No `normal` attribute: the vertex shader overwrites objectNormal with an
+  // analytic getNormal() (see the beginnormal_vertex hook below), so a
+  // computed normals buffer would never be read.
   return geometry;
 }
 
@@ -342,7 +344,10 @@ const MergedPlanes = forwardRef<THREE.Mesh, MergedPlanesProps>(({ material, widt
   const mesh = useRef<THREE.Mesh | null>(null);
   useImperativeHandle(ref, () => mesh.current as THREE.Mesh);
   const geometry = useMemo(
-    () => createStackedPlanesBufferGeometry(count, width, height, 0, 100),
+    // 24 segments is comfortably smooth for a single low-frequency Perlin
+    // octave (uScale ~0.2-0.32) — segment density tracks noise frequency,
+    // not beam height, so this stays fixed regardless of `height`.
+    () => createStackedPlanesBufferGeometry(count, width, height, 0, 24),
     [count, width, height]
   );
   useFrame((_, delta) => {
@@ -369,20 +374,6 @@ const DirLight = ({
   position: [number, number, number];
   color: string;
   intensity: number;
-}) => {
-  const dir = useRef<THREE.DirectionalLight | null>(null);
-  useEffect(() => {
-    if (!dir.current) return;
-    const cam = dir.current.shadow.camera;
-    if (!cam) return;
-    cam.top = 24;
-    cam.bottom = -24;
-    cam.left = -24;
-    cam.right = 24;
-    cam.far = 64;
-    dir.current.shadow.bias = -0.004;
-  }, []);
-  return <directionalLight ref={dir} color={color} intensity={intensity} position={position} />;
-};
+}) => <directionalLight color={color} intensity={intensity} position={position} />;
 
 export default Beams;

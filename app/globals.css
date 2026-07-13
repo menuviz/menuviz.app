@@ -239,6 +239,19 @@ p {
   animation: demo-scroll 16s linear infinite;
 }
 
+/* Canvas background entrance (beams WebGL card + the gradient-glow 2D
+   canvases): fades in once the effect actually starts rendering rather than
+   popping in, so mount/shader-compile/first-paint lag reads as an
+   intentional reveal instead of a jank flash. */
+@keyframes effect-reveal {
+  from {
+    opacity: 0;
+  }
+}
+.effect-reveal {
+  animation: effect-reveal 900ms var(--ease-out-quart) both;
+}
+
 /* Logo strip marquee (phone only): drifts left to right, very slowly. */
 @keyframes marquee {
   from {
@@ -259,7 +272,8 @@ p {
   .demo-swap,
   .demo-pulse,
   .demo-scroll,
-  .marquee {
+  .marquee,
+  .effect-reveal {
     animation: none !important;
   }
 }

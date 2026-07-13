@@ -733,6 +733,11 @@ export function GradientGlow({ store, className = "" }: { store: GradientGlowSto
   const [containerRef, size] = useElementSize<HTMLDivElement>();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [inView, setInView] = useState(false);
+  // The canvas is always mounted (no dynamic import to gate on) but stays
+  // blank until inView + sizing are both ready, so the first real paint below
+  // pops in without this — flips once and stays true, since the drawn frame
+  // persists on the canvas even after scrolling away.
+  const [revealed, setRevealed] = useState(false);
   const reduce = useReducedMotion() ?? false;
   const configRef = useRef(store.getConfig());
 
@@ -765,6 +770,7 @@ export function GradientGlow({ store, className = "" }: { store: GradientGlowSto
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    setRevealed(true);
     const grainLayers = buildGrainLayers(width, height);
 
     let raf = 0;
@@ -809,7 +815,7 @@ export function GradientGlow({ store, className = "" }: { store: GradientGlowSto
     <div
       ref={containerRef}
       aria-hidden="true"
-      className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
+      className={`pointer-events-none absolute inset-0 overflow-hidden ${revealed ? "effect-reveal" : "opacity-0"} ${className}`}
     >
       <canvas
         ref={canvasRef}
