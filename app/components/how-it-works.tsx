@@ -1,10 +1,13 @@
 "use client";
 
-// How-it-works section. Currently the static three-step cards; the pinned
-// scroll-driven stage (md+) replaces the desktop grid in a follow-up task.
+// How-it-works section. Below md (or under reduced motion) the static
+// three-step cards render; on md+ with motion allowed, the pinned
+// scroll-driven stage takes over.
 
+import { useReducedMotion } from "motion/react";
 import BlurText from "./blur-text";
 import { EditorDemo, StampDemo, MiniPhoneDemo } from "./micro-demos";
+import { HowItWorksStage } from "./how-it-works-stage";
 
 export const steps = [
   {
@@ -25,8 +28,10 @@ export const steps = [
 ];
 
 export function HowItWorks() {
-  return (
-    <section id="how-it-works" className="scroll-mt-24 border-t border-hairline">
+  const reduce = useReducedMotion() ?? false;
+
+  const cards = (
+    <div className={reduce ? "" : "md:hidden"}>
       <div className="mx-auto max-w-6xl px-6 py-24 sm:py-28">
         <h2 className="font-display text-[clamp(1.9rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.02em] text-phosphor">
           <BlurText text="How it works" />
@@ -48,6 +53,17 @@ export function HowItWorks() {
           ))}
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <section id="how-it-works" className="scroll-mt-24 border-t border-hairline">
+      {cards}
+      {!reduce && (
+        <div className="hidden md:block">
+          <HowItWorksStage />
+        </div>
+      )}
     </section>
   );
 }
