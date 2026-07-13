@@ -30,7 +30,11 @@ function Rotator({ url, spin }: { url: string; spin: boolean }) {
   return (
     <group ref={group}>
       <Center>
-        <primitive object={scene} />
+        {/* dispose={null}: useGLTF's scene is a shared cache (the How-it-works
+            stage renders a clone of this same GLB); disposing on unmount —
+            this card tears down whenever it scrolls out of view — would gut
+            the geometry/materials for every consumer. */}
+        <primitive object={scene} dispose={null} />
       </Center>
     </group>
   );

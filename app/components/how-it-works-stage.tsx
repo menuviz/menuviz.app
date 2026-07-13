@@ -65,10 +65,20 @@ export function HowItWorksStage() {
   useEffect(() => {
     const el = trackRef.current;
     if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
-      threshold: 0,
-      rootMargin: MOUNT_MARGIN,
-    });
+    // Mount once and keep: unlike the beams card (which animates every frame
+    // and is torn down off-screen to free the GPU), this canvas renders on
+    // demand only, so an idle mounted context costs nothing — and tearing it
+    // down would leave the scrub without a model when scrolling back up
+    // until remount, plus re-pay shader compile on every re-entry.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0, rootMargin: MOUNT_MARGIN }
+    );
     observer.observe(el);
     return () => observer.disconnect();
   }, []);

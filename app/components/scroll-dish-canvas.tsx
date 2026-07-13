@@ -37,11 +37,17 @@ function InvalidateBridge({
 function PosedDish({ poseRef }: { poseRef: React.MutableRefObject<Pose> }) {
   const { scene } = useGLTF(DISH_URL);
   const group = useRef<THREE.Group | null>(null);
+  // The bento's DishViewer renders the same GLB, and useGLTF hands both
+  // consumers one shared Object3D — which can only sit in one scene graph at
+  // a time, so whichever canvas mounts later would steal it from the other.
+  // A clone (shares geometry/materials, separate node graph) lets both show
+  // the dish at once.
+  const dish = useMemo(() => scene.clone(), [scene]);
   // Normalize so the model's largest dimension is 2 world units at scale 1.
   const norm = useMemo(() => {
-    const size = new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3());
+    const size = new THREE.Box3().setFromObject(dish).getSize(new THREE.Vector3());
     return 2 / Math.max(size.x, size.y, size.z);
-  }, [scene]);
+  }, [dish]);
 
   useFrame(({ viewport }) => {
     const g = group.current;
@@ -55,7 +61,10 @@ function PosedDish({ poseRef }: { poseRef: React.MutableRefObject<Pose> }) {
   return (
     <group ref={group}>
       <Center>
-        <primitive object={scene} />
+        {/* dispose={null}: the clone shares the cached scene's geometry and
+            materials — r3f's unmount auto-dispose would gut them for every
+            other consumer (and any later mount). */}
+        <primitive object={dish} dispose={null} />
       </Center>
     </group>
   );
