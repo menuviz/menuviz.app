@@ -8,7 +8,9 @@
 // the wrap model. GSAP tweens the plain pose object — never React state — so
 // scrubbing causes zero re-renders.
 
-import { useRef } from "react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -17,12 +19,55 @@ import { INITIAL_POSE, type Pose } from "./dish-pose";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
+const ScrollDishCanvas = dynamic(() => import("./scroll-dish-canvas"), { ssr: false });
+
 const MM_STAGE = "(min-width: 768px) and (prefers-reduced-motion: no-preference)";
+const MOUNT_MARGIN = "640px 0px";
+
+// GLB/network failure inside the canvas escapes through Suspense to the
+// nearest React error boundary; fall back to the real dish photo so the
+// stage never shows an empty slot.
+class ModelBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Image
+          src="/images/dishes/fried-chicken.png"
+          alt=""
+          width={420}
+          height={420}
+          className="w-[min(38vw,420px)] drop-shadow-[0_24px_48px_rgba(0,0,0,0.45)]"
+        />
+      </div>
+    );
+  }
+}
 
 export function HowItWorksStage() {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const poseRef = useRef<Pose>({ ...INITIAL_POSE });
   const invalidateRef = useRef<(() => void) | null>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    import("./scroll-dish-canvas"); // prefetch chunk + GLB before the section arrives
+  }, []);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), {
+      threshold: 0,
+      rootMargin: MOUNT_MARGIN,
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useGSAP(
     () => {
@@ -91,7 +136,17 @@ export function HowItWorksStage() {
           }}
         />
 
-        {/* Canvas layer mounts here in Task 3 (z-20) */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-20">
+          {inView && (
+            <ModelBoundary>
+              <ScrollDishCanvas
+                poseRef={poseRef}
+                invalidateRef={invalidateRef}
+                className="effect-reveal h-full w-full"
+              />
+            </ModelBoundary>
+          )}
+        </div>
 
         {/* Props layer (QR card, phone frame) arrives in Task 4 (z-10) */}
 
