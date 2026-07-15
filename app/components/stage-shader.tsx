@@ -9,9 +9,33 @@
 // with the scrubbed timeline. Env HDRs are self-hosted (public/hdr/) so the
 // package's default GitHub-Pages fetch never happens.
 
-import { Component, type ReactNode } from "react";
+import { Component, useSyncExternalStore, type ReactNode } from "react";
 import { ShaderGradient, ShaderGradientCanvas } from "@shadergradient/react";
-import { stageShaderStore } from "./shader-store";
+import { stageShaderStore, type ShaderConfig } from "./shader-store";
+
+// Phone variant of the hand-tuned seed (tuned on-device against the portrait
+// frame): the azimuth swing re-centers the blob in the narrow viewport, and
+// grain goes off — at phone pixel sizes it reads as compression noise, not
+// texture. Everything else rides the shared store so dev-panel tweaks apply
+// to both variants.
+const MM_MOBILE = "(max-width: 47.9375rem)";
+const MOBILE_OVERRIDES: Partial<ShaderConfig> = {
+  cAzimuthAngle: 258,
+  grain: "off",
+};
+
+function useIsMobile() {
+  return useSyncExternalStore(
+    (cb) => {
+      const mql = window.matchMedia(MM_MOBILE);
+      mql.addEventListener("change", cb);
+      return () => mql.removeEventListener("change", cb);
+    },
+    () => window.matchMedia(MM_MOBILE).matches,
+    // Never SSR'd (dynamic ssr:false), but useSyncExternalStore wants one.
+    () => false
+  );
+}
 
 // A failed shader (WebGL context loss, HDR fetch error) should cost
 // nothing: the flat backdrop chapters underneath are the fallback.
@@ -28,7 +52,8 @@ class SilentBoundary extends Component<{ children: ReactNode }, { failed: boolea
 export default function StageShader({ className }: { className?: string }) {
   // Live-tunable via ShaderDevPanel in dev; in production the store simply
   // holds STAGE_SHADER_SEED forever.
-  const config = stageShaderStore.useConfig();
+  const base = stageShaderStore.useConfig();
+  const config = useIsMobile() ? { ...base, ...MOBILE_OVERRIDES } : base;
   return (
     <SilentBoundary>
       <ShaderGradientCanvas

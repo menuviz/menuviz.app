@@ -1,8 +1,11 @@
 "use client";
 
-// Pinned scroll-driven How-it-works stage (md+ with motion allowed only —
-// the matchMedia below is the sole guard; the parent handles rendering the
-// card fallback). A ~400vh track holds a sticky 100vh stage; one scrubbed
+// Pinned scroll-driven How-it-works stage (motion allowed only — the
+// matchMedia below is the sole guard; the parent renders the card fallback
+// under reduced motion). Runs at every viewport size: gsap.matchMedia picks
+// a desktop or mobile choreography (same beats, different composition —
+// desktop reads left-text/right-prop, mobile stacks text above the prop).
+// A ~400vh track holds a sticky full-viewport stage; one scrubbed
 // GSAP timeline drives backdrop chapter colors, the intro heading, the three
 // step texts, the props, (via poseRef, applied in the canvas's useFrame) the
 // wrap model, and (via stageRef) the light rig, camera dolly, and the DOM
@@ -37,7 +40,13 @@ const StageShader = dynamic(() => import("./webgl-bundle").then((m) => m.StageSh
   ssr: false,
 });
 
-const MM_STAGE = "(min-width: 48rem) and (prefers-reduced-motion: no-preference)";
+const MM_MOTION = "(prefers-reduced-motion: no-preference)";
+// The two choreographies split at md (48rem), mirroring the Tailwind
+// breakpoint the DOM layer classes use.
+const MM_CONDITIONS = {
+  desktop: `(min-width: 48rem) and ${MM_MOTION}`,
+  mobile: `(max-width: 47.9375rem) and ${MM_MOTION}`,
+};
 const MOUNT_MARGIN = "640px 0px";
 
 // GLB/network failure inside the canvas escapes through Suspense to the
@@ -57,7 +66,7 @@ class ModelBoundary extends Component<{ children: ReactNode }, { failed: boolean
           alt=""
           width={420}
           height={420}
-          className="w-[min(38vw,420px)] drop-shadow-[0_24px_48px_rgba(0,0,0,0.45)]"
+          className="w-[min(60vw,420px)] drop-shadow-[0_24px_48px_rgba(0,0,0,0.45)] md:w-[min(38vw,420px)]"
         />
       </div>
     );
@@ -93,9 +102,9 @@ export function HowItWorksStage() {
   const [shaderInView, setShaderInView] = useState(false);
 
   useEffect(() => {
-    // Below md (or under reduced motion) the stage never mounts, so skip the
-    // chunk + GLB prefetch — phones shouldn't pay for a canvas they can't show.
-    if (!window.matchMedia(MM_STAGE).matches) return;
+    // Under reduced motion the stage never mounts, so skip the chunk + GLB
+    // prefetch — those visitors get the static cards instead.
+    if (!window.matchMedia(MM_MOTION).matches) return;
     import("./webgl-bundle"); // prefetch the shared WebGL chunk + GLB before the section arrives
   }, []);
 
@@ -137,7 +146,37 @@ export function HowItWorksStage() {
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
-      mm.add(MM_STAGE, () => {
+      mm.add(MM_CONDITIONS, (context) => {
+        const mobile = !!context.conditions?.mobile;
+        // Composition constants that differ between the two choreographies.
+        // Desktop: text left, prop right, hero-sized wrap. Mobile: text band
+        // top, prop centered below it, wrap sized to the narrow viewport
+        // (scale is a fraction of stage height; at 1.36 the wrap's width
+        // would overflow a portrait screen). Phone/settle values track the
+        // phone frame's mobile position (top-[62%], smaller width).
+        const C = mobile
+          ? {
+              riseX: 0,
+              riseY: -0.18,
+              riseScale: 0.8,
+              reEnterY: -0.08,
+              reEnterScale: 0.72,
+              settleY: -0.12,
+              settleScale: 0.26,
+              settleShadowScale: 1.7,
+              settleShadowOffset: 0.3,
+            }
+          : {
+              riseX: 0.135,
+              riseY: -0.05,
+              riseScale: 1.36,
+              reEnterY: -0.02,
+              reEnterScale: 1.15,
+              settleY: -0.015,
+              settleScale: 0.3,
+              settleShadowScale: 2.5,
+              settleShadowOffset: 0.355,
+            };
         const p = poseRef.current;
         const s = stageRef.current;
         // Deterministic start values on every matchMedia (re-)init — the
@@ -243,9 +282,12 @@ export function HowItWorksStage() {
         // compose with it instead of overwriting it when GSAP first parses
         // the computed transform.
         gsap.set('[data-hiw="heading"], [data-hiw="phone"]', { xPercent: -50, yPercent: -50 });
-        gsap.set('[data-hiw="text-0"], [data-hiw="text-1"], [data-hiw="text-2"], [data-hiw="qr"]', {
+        gsap.set('[data-hiw="text-0"], [data-hiw="text-1"], [data-hiw="text-2"]', {
           yPercent: -50,
         });
+        // The QR card anchors right-[15%] on desktop but centers (left-1/2)
+        // on mobile, so it needs the -50 xPercent only there.
+        gsap.set('[data-hiw="qr"]', { yPercent: -50, xPercent: mobile ? -50 : 0 });
 
         const tl = gsap.timeline({
           defaults: { ease: "none" },
@@ -339,7 +381,7 @@ export function HowItWorksStage() {
         // Wrap pose choreography. Rise + settle right, hero-sized — end
         // state hand-tuned via the wrap-pose dev panel (rx 1.623 ≡ the tuned
         // -4.66 mod 2π, shorter travel, same orientation).
-        tl.to(p, { y: -0.05, x: 0.135, scale: 1.36, rx: 1.623, rz: 0.14, duration: 14 }, 0);
+        tl.to(p, { y: C.riseY, x: C.riseX, scale: C.riseScale, rx: 1.623, rz: 0.14, duration: 14 }, 0);
         // Continuous scrubbed yaw in two segments so it passes through the
         // hand-tuned rise pose (ry 1.15 at t=14.4) and still lands on the
         // hand-tuned phone pose (ry 5.73) when the settle beat ends at 80,
@@ -355,11 +397,11 @@ export function HowItWorksStage() {
         // (the only linear-speed exit read as too fast against the site's
         // eased motion language).
         tl.to(p, { x: 0, y: -0.75, scale: 0.6, rx: 0.2, rz: 0, duration: 14, ease: "power1.in" }, 26);
-        tl.to(p, { x: 0, y: -0.02, scale: 1.15, duration: 12 }, 58); // re-enter: rise to center, grow
+        tl.to(p, { x: 0, y: C.reEnterY, scale: C.reEnterScale, duration: 12 }, 58); // re-enter: rise to center, grow
         // Settle into the phone, tumbling (pitch + roll on top of the
         // ever-running yaw) into the hand-tuned final pose (values picked
         // live via the wrap-pose dev panel).
-        tl.to(p, { scale: 0.3, y: -0.015, rx: 1.82, rz: 0.92, duration: 10 }, 70);
+        tl.to(p, { scale: C.settleScale, y: C.settleY, rx: 1.82, rz: 0.92, duration: 10 }, 70);
 
         // Scene state: ground shadow, per-chapter light rig, and a small
         // camera dolly. Light shifts ride the backdrop crossfades exactly
@@ -399,7 +441,14 @@ export function HowItWorksStage() {
         // back to baseline.
         tl.to(
           s,
-          { shadowScale: 2.5, shadowOpacity: 0.5, shadowOffset: 0.355, camZ: 5.5, camFov: 32, duration: 12 },
+          {
+            shadowScale: C.settleShadowScale,
+            shadowOpacity: 0.5,
+            shadowOffset: C.settleShadowOffset,
+            camZ: 5.5,
+            camFov: 32,
+            duration: 12,
+          },
           58
         );
         // Mint-chapter rig, hand-tuned via the stage dev panel: key nearly
@@ -432,7 +481,11 @@ export function HowItWorksStage() {
 
   return (
     <div ref={trackRef} className="relative h-[400vh]">
-      <div ref={stageElRef} className="sticky top-0 h-screen overflow-hidden">
+      {/* h-dvh (not h-screen ≈ lvh): on phones the stage tracks the visible
+          viewport as the browser chrome collapses, instead of overflowing
+          under the toolbar. The sticky pin is pure CSS, so the resize costs
+          only a smoothed ScrollTrigger refresh. */}
+      <div ref={stageElRef} className="sticky top-0 h-dvh overflow-hidden">
         {/* Backdrop chapters: deep green, then near-black, then mint wash.
             All start transparent (page void shows through) — the timeline
             fades them in and back out at the section's ends. */}
@@ -486,7 +539,7 @@ export function HowItWorksStage() {
           {/* QR card, chapter 2: same white-chip treatment as the hero sticker */}
           <div
             data-hiw="qr"
-            className="absolute right-[15%] top-1/2 w-[300px] rounded-2xl bg-[#eef2ec] p-5 text-[#111511] opacity-0 shadow-[0_24px_60px_rgba(0,0,0,0.55)]"
+            className="absolute left-1/2 top-[56%] w-[min(74vw,300px)] rounded-2xl bg-[#eef2ec] p-5 text-[#111511] opacity-0 shadow-[0_24px_60px_rgba(0,0,0,0.55)] md:left-auto md:right-[15%] md:top-1/2"
           >
             {/* Viewfinder brackets (the logo motif) — a child of the card so
                 they inherit its in/out/tilt tweens; -inset-5 keeps them out
@@ -550,9 +603,9 @@ export function HowItWorksStage() {
               screen stays empty because the wrap model floats in front of it */}
           <div
             data-hiw="phone"
-            className="absolute left-1/2 top-1/2 w-[320px] rounded-[2.9rem] border border-circuit/70 bg-carbon p-2 opacity-0 shadow-[0_32px_80px_rgba(0,0,0,0.35)]"
+            className="absolute left-1/2 top-[62%] w-[min(56vw,320px)] rounded-[2.4rem] border border-circuit/70 bg-carbon p-2 opacity-0 shadow-[0_32px_80px_rgba(0,0,0,0.35)] md:top-1/2 md:w-[320px] md:rounded-[2.9rem]"
           >
-            <div className="flex aspect-[390/780] flex-col justify-end overflow-hidden rounded-[2.4rem] bg-[#0b0e0c] p-4">
+            <div className="flex aspect-[390/780] flex-col justify-end overflow-hidden rounded-[2rem] bg-[#0b0e0c] p-3 md:rounded-[2.4rem] md:p-4">
               <div className="flex items-center justify-between rounded-lg border border-hairline bg-carbon/80 px-3.5 py-3">
                 <span className="text-[13px] font-medium text-mint">Fried chicken wrap</span>
                 <span className="text-[13px] tabular-nums text-sage">$12</span>
@@ -570,27 +623,46 @@ export function HowItWorksStage() {
             How it works
           </h2>
 
-          <div data-hiw="text-0" className="absolute left-[8%] top-1/2 max-w-xl opacity-0">
+          {/* Step texts: on mobile a full-width band in the upper fifth
+              (yPercent -50 centers each block on its top line), leaving the
+              lower two-thirds to the wrap/QR/phone; on md+ the desktop
+              left-column placement takes over. */}
+          <div
+            data-hiw="text-0"
+            className="absolute left-6 right-6 top-[20%] max-w-xl opacity-0 md:left-[8%] md:right-auto md:top-1/2"
+          >
             <h3 className="font-display text-[clamp(2.2rem,3.8vw,3.4rem)] font-medium leading-[1.08] tracking-[-0.018em] text-mint">
               {steps[0].title}
             </h3>
-            <p className="mt-5 max-w-[40ch] text-[18px] leading-relaxed text-sage">{steps[0].body}</p>
+            <p className="mt-4 max-w-[40ch] text-[15px] leading-relaxed text-sage md:mt-5 md:text-[18px]">
+              {steps[0].body}
+            </p>
           </div>
 
-          <div data-hiw="text-1" className="absolute left-[9%] top-1/2 max-w-lg opacity-0">
+          <div
+            data-hiw="text-1"
+            className="absolute left-6 right-6 top-[20%] max-w-lg opacity-0 md:left-[9%] md:right-auto md:top-1/2"
+          >
             <h3 className="font-display text-[clamp(2.2rem,3.8vw,3.4rem)] font-medium leading-[1.08] tracking-[-0.018em] text-mint">
               {steps[1].title}
             </h3>
-            <p className="mt-5 max-w-[40ch] text-[18px] leading-relaxed text-sage">{steps[1].body}</p>
+            <p className="mt-4 max-w-[40ch] text-[15px] leading-relaxed text-sage md:mt-5 md:text-[18px]">
+              {steps[1].body}
+            </p>
           </div>
 
           {/* Chapter 3 sits on the light mint wash, so its text flips dark
               (same ink pair the bento's wash card uses). */}
-          <div data-hiw="text-2" className="absolute left-[7%] top-1/2 max-w-lg opacity-0">
+          <div
+            data-hiw="text-2"
+            className="absolute left-6 right-6 top-[20%] max-w-lg opacity-0 md:left-[7%] md:right-auto md:top-1/2"
+          >
             <h3 className="font-display text-[clamp(2.2rem,3.8vw,3.4rem)] font-medium leading-[1.08] tracking-[-0.018em] text-[#132018]">
               {steps[2].title}
             </h3>
-            <p className="mt-5 max-w-[40ch] text-[18px] leading-relaxed text-[#3d5a48]">{steps[2].body}</p>
+            <p className="mt-4 max-w-[40ch] text-[15px] leading-relaxed text-[#3d5a48] md:mt-5 md:text-[18px]">
+              {steps[2].body}
+            </p>
           </div>
         </div>
       </div>

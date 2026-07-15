@@ -1,8 +1,8 @@
 "use client";
 
-// How-it-works section. Below md (or under reduced motion) the static
-// three-step cards render; on md+ with motion allowed, the pinned
-// scroll-driven stage takes over.
+// How-it-works section. The pinned scroll-driven stage runs at every
+// viewport size; under reduced motion the static three-step cards render
+// instead.
 
 import { useEffect, useState } from "react";
 import { useReducedMotion } from "motion/react";
@@ -42,7 +42,7 @@ export function HowItWorks() {
   }, [prefersReduce]);
 
   const cards = (
-    <div className={`border-t border-hairline ${reduce ? "" : "md:hidden"}`}>
+    <div className="border-t border-hairline">
       <div className="mx-auto max-w-6xl px-6 py-24 sm:py-28">
         <h2 className="font-display text-[clamp(1.9rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-0.02em] text-phosphor">
           <BlurText text="How it works" />
@@ -72,9 +72,10 @@ export function HowItWorks() {
     // void on both ends, so any hairline would read as a seam. The cards
     // variant carries its own border instead.
     <section id="how-it-works" className="scroll-mt-24">
-      {cards}
-      {!reduce && (
-        <div className="hidden pb-28 md:block">
+      {reduce ? (
+        cards
+      ) : (
+        <div className="pb-20 md:pb-28">
           <HowItWorksStage />
         </div>
       )}
