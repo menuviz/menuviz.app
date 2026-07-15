@@ -24,7 +24,7 @@ import {
   LocationRippleDemo,
 } from "./components/micro-demos";
 
-const DEMO_URL = "https://cal.com/menuviz/demo";
+const DEMO_URL = "https://cal.com/yahya-khan-v3alhg/demo-call";
 
 function ArrowUpRight({ className }: { className?: string }) {
   return (
