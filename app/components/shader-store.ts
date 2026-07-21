@@ -37,6 +37,10 @@ export interface ShaderConfig {
   brightness: number;
   envPreset: EnvPreset;
   grain: "on" | "off";
+  // 0-1 mix of the grain (halftone) pass over the raw gradient. Requires our
+  // patch of @shadergradient/react (patches/) — stock 2.4.20 declares the
+  // grainBlending prop in its types but never wires it, hardcoding 1.
+  grainBlending: number;
 }
 
 export interface ShaderStore {
@@ -139,6 +143,7 @@ export const STAGE_SHADER_SEED: ShaderConfig = {
   brightness: 0.3,
   envPreset: "city",
   grain: "on",
+  grainBlending: 0.2,
 };
 
 export const stageShaderStore = createShaderStore(STAGE_SHADER_SEED);

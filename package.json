@@ -44,5 +44,8 @@
     "prettier-plugin-tailwindcss": "^0.6.11",
     "typescript": "^6.0.3",
     "wrangler": "^4.86.0"
+  },
+  "patchedDependencies": {
+    "@shadergradient/react@2.4.20": "patches/@shadergradient%2Freact@2.4.20.patch"
   }
 }

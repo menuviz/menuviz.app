@@ -39,6 +39,9 @@
   "trustedDependencies": [
     "unrs-resolver",
   ],
+  "patchedDependencies": {
+    "@shadergradient/react@2.4.20": "patches/@shadergradient%2Freact@2.4.20.patch",
+  },
   "packages": {
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 

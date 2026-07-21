@@ -96,6 +96,7 @@ export default function StageShader({ className }: { className?: string }) {
           brightness={config.brightness}
           envPreset={config.envPreset}
           grain={config.grain}
+          grainBlending={config.grainBlending}
         />
       </ShaderGradientCanvas>
     </SilentBoundary>

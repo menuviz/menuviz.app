@@ -101,6 +101,7 @@ export function ShaderDevPanel({ store }: { store: ShaderStore }) {
         <SliderRow label="brightness" value={config.brightness} min={0} max={2} step={0.05} onChange={(v) => store.update({ brightness: v })} />
         <SliderRow label="reflection" value={config.reflection} min={0} max={1} step={0.01} onChange={(v) => store.update({ reflection: v })} />
         <SelectRow label="grain" value={config.grain} options={GRAIN} onChange={(v) => store.update({ grain: v })} />
+        <SliderRow label="grainAmount" value={config.grainBlending} min={0} max={1} step={0.01} onChange={(v) => store.update({ grainBlending: v })} />
       </Section>
 
       <Section title="Colors (locked in randomize)">
