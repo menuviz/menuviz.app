@@ -10,6 +10,7 @@ import { forwardRef, useImperativeHandle, useRef, useMemo } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { PerspectiveCamera } from "@react-three/drei";
+import { useFrameTimer } from "./use-frame-timer";
 
 type ShaderChunkMap = Record<string, string>;
 
@@ -350,12 +351,14 @@ const MergedPlanes = forwardRef<THREE.Mesh, MergedPlanesProps>(({ material, widt
     () => createStackedPlanesBufferGeometry(count, width, height, 0, 24),
     [count, width, height]
   );
-  useFrame((_, delta) => {
+  const timer = useFrameTimer();
+  useFrame(() => {
+    timer.update();
     // Mutating the ref's material directly (r3f's documented per-frame update
     // pattern) rather than via setState, which would re-render every frame.
     const uniforms = (mesh.current?.material as THREE.ShaderMaterial | undefined)?.uniforms;
     // eslint-disable-next-line react-hooks/immutability
-    if (uniforms) uniforms.time.value += 0.1 * delta;
+    if (uniforms) uniforms.time.value += 0.1 * timer.getDelta();
   });
   return <mesh ref={mesh} geometry={geometry} material={material} />;
 });

@@ -15,12 +15,18 @@ import { Suspense, useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF, Bounds, Center } from "@react-three/drei";
+import { useFrameTimer } from "./use-frame-timer";
 
 function Rotator({ url, spin }: { url: string; spin: boolean }) {
   const { scene } = useGLTF(url);
   const group = useRef<THREE.Group | null>(null);
-  useFrame((_, delta) => {
+  const timer = useFrameTimer();
+  useFrame(() => {
+    // Update even when not spinning, so toggling spin back on doesn't hand
+    // the first frame the whole paused stretch as one delta.
+    timer.update();
     if (!spin || !group.current) return;
+    const delta = timer.getDelta();
     // Non-integer speed ratios between axes so the tumble never repeats a
     // simple cycle — it keeps drifting through new orientations.
     group.current.rotation.x += delta * 0.27;
